@@ -1,3 +1,5 @@
+from os import getenv
+
 from classy_fastapi import Routable, get, put
 from fastapi import FastAPI
 from pydantic import BaseModel
@@ -64,7 +66,11 @@ app = FastAPI(title="MeritRank", version="0.2.0")
 
 
 def create_meritrank_app():
-    rank_instance = IncrementalMeritRank()
+    edges_data = None
+    if postgres_url := getenv("POSTGRES_DB_URL"):
+        from meritrank_service.postgres_edges_provider import get_edges_data
+        edges_data = get_edges_data(postgres_url)
+    rank_instance = IncrementalMeritRank(graph=edges_data)
     user_routes = MeritRankRoutes(rank_instance)
 
     app.include_router(user_routes.router)

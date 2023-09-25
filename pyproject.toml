@@ -15,6 +15,7 @@ classy-fastapi = "^0.4.0"
 # Classy is incompatible with fastapi versions starting from 0.100.0
 fastapi = "<0.100.0"
 meritrank-python = "0.2.0"
+psycopg2-binary = "^2.9.7"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.2.0"
