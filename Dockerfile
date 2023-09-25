@@ -37,3 +37,6 @@ EXPOSE 8000
 
 # Run the application
 CMD ["uvicorn", "--factory", "meritrank_service.asgi:create_meritrank_app", "--host", "0.0.0.0", "--port", "8000"]
+
+
+HEALTHCHECK CMD curl --fail http://localhost:8000/healthcheck || exit 1

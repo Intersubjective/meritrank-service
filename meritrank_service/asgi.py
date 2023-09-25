@@ -20,6 +20,11 @@ class MeritRankRoutes(Routable):
         # The set of egos for which MeritRank has already been calculated
         self.__egos = set()
 
+    @get("/healthcheck")
+    async def healthcheck(self):
+        # Basic healthcheck route for Docker integration
+        return {"status": "ok"}
+
     @get("/edges/{src}/{dest}")
     async def get_edge(self, src: NodeId, dest: NodeId):
         if (weight := self.__rank.get_edge(src, dest)) is not None:
