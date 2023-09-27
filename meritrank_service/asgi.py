@@ -56,11 +56,11 @@ class MeritRankRoutes(Routable):
     @get("/node_score/{ego}/{dest}")
     async def get_node_score(self, ego: NodeId, dest: NodeId):
         self.__maybe_add_ego(ego)
-        return self.__rank.get_node_score(ego, dest)
+        return {"score": self.__rank.get_node_score(ego, dest)}
 
     @get("/node_edges/{node}")
-    async def get_node_edges(self, node: NodeId):
-        return self.__rank.get_node_edges(node)
+    async def get_node_edges(self, node: NodeId) -> list[Edge]:
+        return list(Edge(src=e[0], dest=e[1], weight=e[2]) for e in self.__rank.get_node_edges(node))
 
     def __maybe_add_ego(self, ego):
         if ego not in self.__egos:
