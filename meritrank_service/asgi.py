@@ -13,6 +13,11 @@ class Edge(BaseModel):
     weight: float = 1.0
 
 
+class NodeScore(BaseModel):
+    node: NodeId
+    score: float
+
+
 class MeritRankRoutes(Routable):
     def __init__(self, rank: IncrementalMeritRank) -> None:
         super().__init__()
@@ -51,7 +56,7 @@ class MeritRankRoutes(Routable):
     @get("/scores/{ego}")
     async def get_scores(self, ego: NodeId, limit: int | None = None):
         self.__maybe_add_ego(ego)
-        return self.__rank.get_ranks(ego, limit=limit)
+        return [NodeScore(node=node, score=score) for node, score in self.__rank.get_ranks(ego, limit=limit).items()]
 
     @get("/node_score/{ego}/{dest}")
     async def get_node_score(self, ego: NodeId, dest: NodeId):
@@ -67,7 +72,7 @@ class MeritRankRoutes(Routable):
             self.__rank.calculate(ego)
 
 
-app = FastAPI(title="MeritRank", version="0.2.0")
+app = FastAPI(title="MeritRank", version="0.2.1")
 
 
 def create_meritrank_app():
