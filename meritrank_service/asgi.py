@@ -72,6 +72,7 @@ class MeritRankRoutes(Routable):
 
     def __maybe_add_ego(self, ego):
         if ego not in self.__egos:
+            self.__egos.add(ego)
             self.__rank.calculate(ego)
 
 
