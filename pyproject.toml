@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "meritrank-service"
-version = "1.0.0"
+version = "1.0.1"
 description = "Web service for calculating MeritRank scores"
 authors = ["V.G. Bulavintsev <golem.md@gmail.com>"]
 readme = "README.md"

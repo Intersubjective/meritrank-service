@@ -56,19 +56,19 @@ class MeritRankRoutes(Routable):
         return {"message": f"Added {len(edges_list)} edges"}
 
     @get("/scores/{ego}")
-    async def get_scores(self, ego: NodeId, limit: int | None = None):
+    async def get_scores(self, ego: NodeId, limit: int | None = None) -> list[NodeScore]:
         self.__maybe_add_ego(ego)
         return [NodeScore(node=node, ego=ego, score=score) for node, score in
                 self.__rank.get_ranks(ego, limit=limit).items()]
 
-    @get("/node_score/{ego}/{dest}")
-    async def get_node_score(self, ego: NodeId, node: NodeId):
+    @get("/node_score/{ego}/{node}")
+    async def get_node_score(self, ego: NodeId, node: NodeId)-> NodeScore:
         self.__maybe_add_ego(ego)
-        return {NodeScore(node=node, ego=ego, score=self.__rank.get_node_score(ego, node))}
+        return NodeScore(node=node, ego=ego, score=self.__rank.get_node_score(ego, node))
 
-    @get("/node_edges/{node}")
-    async def get_node_edges(self, node: NodeId) -> list[Edge]:
-        return list(Edge(src=e[0], dest=e[1], weight=e[2]) for e in self.__rank.get_node_edges(node))
+    @get("/node_edges/{src}")
+    async def get_node_edges(self, src: NodeId) -> list[Edge]:
+        return list(Edge(src=e[0], dest=e[1], weight=e[2]) for e in self.__rank.get_node_edges(src))
 
     def __maybe_add_ego(self, ego):
         if ego not in self.__egos:
