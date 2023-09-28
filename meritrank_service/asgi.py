@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 
 from meritrank_python.rank import NodeId, IncrementalMeritRank
+from meritrank_service import __version__ as meritrank_service_version
 
 
 class Edge(BaseModel):
@@ -15,6 +16,7 @@ class Edge(BaseModel):
 
 class NodeScore(BaseModel):
     node: NodeId
+    ego: NodeId
     score: float
 
 
@@ -30,12 +32,12 @@ class MeritRankRoutes(Routable):
         # Basic healthcheck route for Docker integration
         return {"status": "ok"}
 
-    @get("/edges/{src}/{dest}")
+    @get("/edge/{src}/{dest}")
     async def get_edge(self, src: NodeId, dest: NodeId):
         if (weight := self.__rank.get_edge(src, dest)) is not None:
             return Edge(src=src, dest=dest, weight=weight)
 
-    @put("/edges")
+    @put("/edge")
     async def put_edge(self, edge: Edge):
         self.__rank.add_edge(edge.src, edge.dest, edge.weight)
         return {"message": f"Added edge {edge.src} -> {edge.dest} "
@@ -56,12 +58,13 @@ class MeritRankRoutes(Routable):
     @get("/scores/{ego}")
     async def get_scores(self, ego: NodeId, limit: int | None = None):
         self.__maybe_add_ego(ego)
-        return [NodeScore(node=node, score=score) for node, score in self.__rank.get_ranks(ego, limit=limit).items()]
+        return [NodeScore(node=node, ego=ego, score=score) for node, score in
+                self.__rank.get_ranks(ego, limit=limit).items()]
 
     @get("/node_score/{ego}/{dest}")
-    async def get_node_score(self, ego: NodeId, dest: NodeId):
+    async def get_node_score(self, ego: NodeId, node: NodeId):
         self.__maybe_add_ego(ego)
-        return {"score": self.__rank.get_node_score(ego, dest)}
+        return {NodeScore(node=node, ego=ego, score=self.__rank.get_node_score(ego, node))}
 
     @get("/node_edges/{node}")
     async def get_node_edges(self, node: NodeId) -> list[Edge]:
@@ -72,7 +75,7 @@ class MeritRankRoutes(Routable):
             self.__rank.calculate(ego)
 
 
-app = FastAPI(title="MeritRank", version="0.2.1")
+app = FastAPI(title="MeritRank", version=meritrank_service_version)
 
 
 def create_meritrank_app():
