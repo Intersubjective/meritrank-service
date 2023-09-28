@@ -4,8 +4,11 @@ from classy_fastapi import Routable, get, put
 from fastapi import FastAPI
 from pydantic import BaseModel
 
-from meritrank_python.rank import NodeId, IncrementalMeritRank
+from meritrank_python.rank import NodeId
+from meritrank_python.lazy import LazyMeritRank
 from meritrank_service import __version__ as meritrank_service_version
+
+from meritrank_service.graphql import get_graphql_app
 
 
 class Edge(BaseModel):
@@ -21,11 +24,9 @@ class NodeScore(BaseModel):
 
 
 class MeritRankRoutes(Routable):
-    def __init__(self, rank: IncrementalMeritRank) -> None:
+    def __init__(self, rank: LazyMeritRank) -> None:
         super().__init__()
         self.__rank = rank
-        # The set of egos for which MeritRank has already been calculated
-        self.__egos = set()
 
     @get("/healthcheck")
     async def healthcheck(self):
@@ -52,31 +53,21 @@ class MeritRankRoutes(Routable):
             graph.setdefault(edge.src, {}).setdefault(edge.dest, {})[
                 'weight'] = edge.weight
 
-        self.__rank = IncrementalMeritRank(graph)
+        self.__rank = LazyMeritRank(graph)
         return {"message": f"Added {len(edges_list)} edges"}
 
     @get("/scores/{ego}")
     async def get_scores(self, ego: NodeId, limit: int | None = None) -> list[NodeScore]:
-        self.__maybe_add_ego(ego)
         return [NodeScore(node=node, ego=ego, score=score) for node, score in
                 self.__rank.get_ranks(ego, limit=limit).items()]
 
     @get("/node_score/{ego}/{node}")
-    async def get_node_score(self, ego: NodeId, node: NodeId)-> NodeScore:
-        self.__maybe_add_ego(ego)
+    async def get_node_score(self, ego: NodeId, node: NodeId) -> NodeScore:
         return NodeScore(node=node, ego=ego, score=self.__rank.get_node_score(ego, node))
 
     @get("/node_edges/{src}")
     async def get_node_edges(self, src: NodeId) -> list[Edge]:
         return list(Edge(src=e[0], dest=e[1], weight=e[2]) for e in self.__rank.get_node_edges(src))
-
-    def __maybe_add_ego(self, ego):
-        if ego not in self.__egos:
-            self.__egos.add(ego)
-            self.__rank.calculate(ego)
-
-
-app = FastAPI(title="MeritRank", version=meritrank_service_version)
 
 
 def create_meritrank_app():
@@ -84,8 +75,10 @@ def create_meritrank_app():
     if postgres_url := getenv("POSTGRES_DB_URL"):
         from meritrank_service.postgres_edges_provider import get_edges_data
         edges_data = get_edges_data(postgres_url)
-    rank_instance = IncrementalMeritRank(graph=edges_data)
+    rank_instance = LazyMeritRank(graph=edges_data)
     user_routes = MeritRankRoutes(rank_instance)
 
+    app = FastAPI(title="MeritRank", version=meritrank_service_version)
     app.include_router(user_routes.router)
+    app.include_router(get_graphql_app(rank_instance), prefix="/graphql")
     return app
