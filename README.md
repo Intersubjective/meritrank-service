@@ -28,6 +28,8 @@ env POSTGRES_DB_URL="postgres://postgres:12345678@localhost:54321/postgres" uvic
 
 ```
 
+### Logging
+You can enable logging by setting the environment variable `MERITRANK_DEBUG_LEVEL` to the desirable Python logging level, e.g. `MERITRANK_DEBUG_LEVEL=INFO`. By default, the error level is set to `ERROR`, meaning that only errors are logged.
 
 
 ## Docker
