@@ -17,7 +17,7 @@ class NodeInput:
 
     def match(self, node) -> bool:
         if self.like is not None:
-            return node.startswith(self._like)
+            return node.startswith(self.like)
         return True
 
 
