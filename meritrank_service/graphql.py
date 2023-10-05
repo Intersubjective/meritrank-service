@@ -13,29 +13,29 @@ from meritrank_service.log import LOGGER
 
 @strawberry.input
 class NodeInput:
-    _like: Optional[str] = None
+    like: Optional[str] = None
 
     def match(self, node) -> bool:
-        if self._like is not None:
+        if self.like is not None:
             return node.startswith(self._like)
         return True
 
 
 @strawberry.input
 class ScoreInput:
-    _lte: Optional[float] = None
-    _lt: Optional[float] = None
-    _gte: Optional[float] = None
-    _gt: Optional[float] = None
+    lte: Optional[float] = None
+    lt: Optional[float] = None
+    gte: Optional[float] = None
+    gt: Optional[float] = None
 
     def match(self, score) -> bool:
-        if (lte := self._lte) is not None and not (score <= lte):
+        if (lte := self.lte) is not None and not (score <= lte):
             return False
-        if (lt := self._lt) is not None and not (score < lt):
+        if (lt := self.lt) is not None and not (score < lt):
             return False
-        if (gte := self._gte) is not None and not (score >= gte):
+        if (gte := self.gte) is not None and not (score >= gte):
             return False
-        if (gt := self._gt) is not None and not (score > gt):
+        if (gt := self.gt) is not None and not (score > gt):
             return False
         return True
 
