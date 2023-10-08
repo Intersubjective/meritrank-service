@@ -6,6 +6,7 @@ from meritrank_python.lazy import LazyMeritRank
 from meritrank_service import __version__ as meritrank_service_version
 
 from meritrank_service.graphql import get_graphql_app
+from meritrank_service.gravity_rank import GravityRank
 from meritrank_service.log import LOGGER
 from meritrank_service.rest import MeritRankRestRoutes
 
@@ -21,7 +22,7 @@ def create_meritrank_app():
         edges_data = get_edges_data(postgres_url)
         LOGGER.info("Loaded edges from DB")
     LOGGER.info("Creating meritrank instance")
-    rank_instance = LazyMeritRank(graph=edges_data, logger=LOGGER.getChild("meritrank"))
+    rank_instance = GravityRank(graph=edges_data, logger=LOGGER.getChild("meritrank"))
     user_routes = MeritRankRestRoutes(rank_instance)
 
     LOGGER.info("Creating FastAPI instance")

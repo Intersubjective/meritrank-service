@@ -9,6 +9,7 @@ from strawberry.fastapi import GraphQLRouter, BaseContext
 from strawberry.types import Info
 
 from meritrank_service.asgi import LazyMeritRank
+from meritrank_service.gql_types import Edge, NodeScore, GravityGraph
 from meritrank_service.log import LOGGER
 
 
@@ -23,7 +24,9 @@ def handle_exceptions(func):
             raise ValueError("Tried to get score from node that was not initialized as ego before", args[1])
         except EgoCounterEmpty:
             raise ValueError("Score counter empty for ego. (e.g. initialized with zero walks)", args[1])
+
     return wrapper
+
 
 @strawberry.input
 class NodeInput:
@@ -67,21 +70,11 @@ class NodeScoreWhereInput:
         return True
 
 
-@strawberry.type
-class NodeScore:
-    node: str
-    ego: str
-    score: float
-
-
-@strawberry.type
-class Edge:
-    src: str
-    dest: str
-    weight: float
-
-
 LOGGER = LOGGER.getChild("graphql")
+
+
+def ego_score_dict_to_list(ego, d):
+    return [NodeScore(node=n, ego=ego, score=s) for n, s in d.items()]
 
 
 @strawberry.type
@@ -113,6 +106,24 @@ class Query:
                 continue
             result.append(NodeScore(node=node, ego=ego, score=score))
         return result
+
+    @strawberry.field
+    def gravity_graph(self, info, ego: str, include_negative: bool = False) -> GravityGraph:
+        """
+        This handle returns a graph of user's connections to other users.
+        The graph is specific to usage in the Gravity/A2 social network.
+        :param ego: ego to get the graph for
+        :param include_negative: whether to include nodes with negative scores
+        :return: GravityGraph
+        """
+        LOGGER.info("Getting gravity graph (%s, include_negative=%s)", ego, "True" if include_negative else "False")
+        edges, users, beacons, comments = info.context.mr.gravity_graph(ego, include_negative)
+        return GravityGraph(
+            edges=edges,
+            users=ego_score_dict_to_list(ego, users),
+            beacons=ego_score_dict_to_list(ego, beacons),
+            comments=ego_score_dict_to_list(ego, comments)
+        )
 
 
 @strawberry.type
