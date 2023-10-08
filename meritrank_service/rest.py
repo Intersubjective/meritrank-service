@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from meritrank_python.rank import NodeId
 from meritrank_python.lazy import LazyMeritRank
 
-from meritrank_service.log import LOGGER
+from meritrank_service.log import LOGGER as TOPLEVEL_LOGGER
 
 
 class Edge(BaseModel):
@@ -19,7 +19,7 @@ class NodeScore(BaseModel):
     score: float
 
 
-LOGGER = LOGGER.getChild("REST")
+LOGGER = TOPLEVEL_LOGGER.getChild("REST")
 
 
 class MeritRankRestRoutes(Routable):
@@ -32,6 +32,26 @@ class MeritRankRestRoutes(Routable):
     async def healthcheck(self):
         # Basic healthcheck route for Docker integration
         return {"status": "ok"}
+
+    @put("/calculate")
+    async def calculate(self, ego: NodeId, count: int = 10000):
+        """
+        (Re)initialze an ego by (re)calculating walks for it.
+        :param ego: the node to create ego for
+        :param count: the number of walks to generate for the ego
+        """
+        self.__rank.calculate(ego, num_walks=count)
+        return {"message": f"Calculated {count} walks for {ego}"}
+
+    @put("/loglevel")
+    async def loglevel(self, loglevel: str):
+        """
+        Set global logger level
+        :param loglevel: logging level in Python notation (e.g. DEBUG, INFO, WARNING, ERROR, CRITICAL)
+        """
+        TOPLEVEL_LOGGER.setLevel(loglevel.upper())
+        LOGGER.info("Changed log level to %s", loglevel)
+        return {"message": f"Set log level to {loglevel}"}
 
     @get("/edge/{src}/{dest}")
     async def get_edge(self, src: NodeId, dest: NodeId):

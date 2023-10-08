@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "meritrank-service"
-version = "1.2.2"
+version = "1.2.3"
 description = "Web service for calculating MeritRank scores"
 authors = ["V.G. Bulavintsev <golem.md@gmail.com>"]
 readme = "README.md"
@@ -14,7 +14,7 @@ python = "^3.11"
 classy-fastapi = "^0.4.0"
 # Classy is incompatible with fastapi versions starting from 0.100.0
 fastapi = "<0.100.0"
-meritrank-python = "0.2.3"
+meritrank-python = "0.2.4"
 psycopg2-binary = "^2.9.7"
 strawberry-graphql = {extras = ["fastapi"], version = "^0.209.2"}
 

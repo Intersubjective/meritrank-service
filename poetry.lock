@@ -142,7 +142,7 @@ python-versions = ">=3.7"
 
 [[package]]
 name = "meritrank-python"
-version = "0.2.3"
+version = "0.2.4"
 description = "MeritRank decentralized, sybil-resistant, personalized ranking algorithm library"
 category = "main"
 optional = false
@@ -323,7 +323,7 @@ full = ["httpx (>=0.22.0)", "itsdangerous", "jinja2", "python-multipart", "pyyam
 
 [[package]]
 name = "strawberry-graphql"
-version = "0.209.5"
+version = "0.209.6"
 description = "A library for creating GraphQL APIs"
 category = "main"
 optional = false
@@ -364,7 +364,7 @@ python-versions = ">=3.8"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.11"
-content-hash = "793983d86cc48421935b1ec8edae04d706b01a9eb405140b6f5ad54244989bcf"
+content-hash = "94196389bb9fd8da2dbc4c7ab02df3c4c6a096938cf14e19d9dcf4aaf106838c"
 
 [metadata.files]
 anyio = [
@@ -464,8 +464,8 @@ iniconfig = [
     {file = "iniconfig-2.0.0.tar.gz", hash = "sha256:2d91e135bf72d31a410b17c16da610a82cb55f6b0477d1a902134b24a455b8b3"},
 ]
 meritrank-python = [
-    {file = "meritrank_python-0.2.3-py3-none-any.whl", hash = "sha256:c0a1e40380bdc736393a32713538b42f896032605d799e80bdd50a34d1f09b24"},
-    {file = "meritrank_python-0.2.3.tar.gz", hash = "sha256:7bc36ff1cfa1f46610a8ece9f6c6614a4a969a16137ee0517b1087565ef53c4f"},
+    {file = "meritrank_python-0.2.4-py3-none-any.whl", hash = "sha256:ab42550b798b7e8e3d42dc73f236b3ebc644d3f14707008eeeccf16290e18f58"},
+    {file = "meritrank_python-0.2.4.tar.gz", hash = "sha256:273b9b5e20bde210c9a821dad33a9d13f4bb313099385a3e69b41244750ff5f2"},
 ]
 networkx = [
     {file = "networkx-2.8.8-py3-none-any.whl", hash = "sha256:e435dfa75b1d7195c7b8378c3859f0445cd88c6b0375c181ed66823a9ceb7524"},
@@ -625,8 +625,8 @@ starlette = [
     {file = "starlette-0.27.0.tar.gz", hash = "sha256:6a6b0d042acb8d469a01eba54e9cda6cbd24ac602c4cd016723117d6a7e73b75"},
 ]
 strawberry-graphql = [
-    {file = "strawberry_graphql-0.209.5-py3-none-any.whl", hash = "sha256:f9a680e811c771c94998b7a1f4e71a66fe9779f8dc45dedc9188d574dbecce6d"},
-    {file = "strawberry_graphql-0.209.5.tar.gz", hash = "sha256:62ad1a0ef6313559dfd85827f7f714372cd74461ebfa63e5da601dc06347a838"},
+    {file = "strawberry_graphql-0.209.6-py3-none-any.whl", hash = "sha256:b92f42612633264fd2d815ae811cb619350926be63d2330913c4b1bcc7d0dd78"},
+    {file = "strawberry_graphql-0.209.6.tar.gz", hash = "sha256:abd6c3b3a8ddb2e28a16142e7a6b1a380e4c00f5a72caa2eba6bdc2a99e50fb5"},
 ]
 typing-extensions = [
     {file = "typing_extensions-4.8.0-py3-none-any.whl", hash = "sha256:8f92fc8806f9a6b641eaa5318da32b44d401efaac0f6678c9bc448ba3605faa0"},
