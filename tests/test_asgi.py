@@ -4,7 +4,8 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from meritrank_service.asgi import create_meritrank_app, MeritRankRoutes, Edge
+from meritrank_service.asgi import create_meritrank_app
+from meritrank_service.rest import Edge, MeritRankRestRoutes
 
 
 @pytest.fixture()
@@ -14,7 +15,7 @@ def mrank():
 
 @pytest.fixture()
 def rank_routes(mrank):
-    return MeritRankRoutes(mrank)
+    return MeritRankRestRoutes(mrank)
 
 
 @pytest.fixture()
@@ -26,7 +27,7 @@ def client(rank_routes):
 
 def test_complete_init_with_default_values():
     assert TestClient(app=create_meritrank_app()).get(
-        "/edges/0/1").status_code == 200
+        "/edge/0/1").status_code == 200
 
 
 def test_get_node_score(mrank, rank_routes, client):
@@ -34,12 +35,12 @@ def test_get_node_score(mrank, rank_routes, client):
     mrank.get_node_score = lambda *_: result
     response = client.get("/node_score/0/1")
     assert response.status_code == 200
-    assert response.json() == {"score": result}
+    assert response.json() == {'ego': '0', 'node': '1', 'score': 0.999}
 
 
 def test_put_edge(mrank, rank_routes, client):
     e = Edge(src='a', dest='b', weight=1.0)
-    response = client.put("/edges", data=e.json())
+    response = client.put("/edge", data=e.json())
     assert response.status_code == 200
     mrank.add_edge.assert_called_once_with('a', 'b', 1.0)
 
