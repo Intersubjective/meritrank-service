@@ -1,3 +1,4 @@
+import typing
 from functools import wraps
 from typing import Optional
 
@@ -108,11 +109,13 @@ class Query:
         return result
 
     @strawberry.field
-    def gravity_graph(self, info, ego: str, include_negative: bool = False) -> GravityGraph:
+    def gravity_graph(self, info, ego: str) -> GravityGraph:
+        # ACHTUNG: Strawberry presents bools as str in schema - a BUG
         """
         This handle returns a graph of user's connections to other users.
         The graph is specific to usage in the Gravity/A2 social network.
         """
+        include_negative = False
         LOGGER.info("Getting gravity graph (%s, include_negative=%s)", ego, "True" if include_negative else "False")
         edges, users, beacons, comments = info.context.mr.gravity_graph(ego, include_negative)
         return GravityGraph(
