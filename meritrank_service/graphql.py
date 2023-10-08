@@ -1,8 +1,9 @@
+from functools import wraps
 from typing import Optional
 
 import strawberry
 from fastapi import Depends
-from meritrank_python.rank import IncrementalMeritRank, NodeDoesNotExist
+from meritrank_python.rank import IncrementalMeritRank, NodeDoesNotExist, EgoNotInitialized, EgoCounterEmpty
 
 from strawberry.fastapi import GraphQLRouter, BaseContext
 from strawberry.types import Info
@@ -10,6 +11,19 @@ from strawberry.types import Info
 from meritrank_service.asgi import LazyMeritRank
 from meritrank_service.log import LOGGER
 
+
+def handle_exceptions(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except NodeDoesNotExist:
+            raise ValueError("Tried to get score from the standpoint of non-existing node", args[1])
+        except EgoNotInitialized:
+            raise ValueError("Tried to get score from node that was not initialized as ego before", args[1])
+        except EgoCounterEmpty:
+            raise ValueError("Score counter empty for ego. (e.g. initialized with zero walks)", args[1])
+    return wrapper
 
 @strawberry.input
 class NodeInput:
@@ -82,26 +96,22 @@ class Query:
     def edges(self, info: Info, src: str) -> list[Edge]:
         return [Edge(src=e[0], dest=e[1], weight=e[2]) for e in info.context.mr.get_node_edges(src)]
 
+    @handle_exceptions
     @strawberry.field
     def score(self, info, ego: str, node: str) -> NodeScore:
-        try:
-            score = info.context.mr.get_node_score(ego, node)
-        except NodeDoesNotExist:
-            raise ValueError("Tried to get score for non-existing ego", ego)
+        score = info.context.mr.get_node_score(ego, node)
         return NodeScore(node=node, ego=ego, score=score)
 
+    @handle_exceptions
     @strawberry.field
     def scores(self, info, ego: str,
                where: NodeScoreWhereInput | None = None,
                limit: int | None = None) -> list[NodeScore]:
         result = []
-        try:
-            for node, score in info.context.mr.get_ranks(ego, limit=limit).items():
-                if where is not None and not where.match(node, score):
-                    continue
-                result.append(NodeScore(node=node, ego=ego, score=score))
-        except NodeDoesNotExist:
-            raise ValueError("Tried to get score for non-existing ego", ego)
+        for node, score in info.context.mr.get_ranks(ego, limit=limit).items():
+            if where is not None and not where.match(node, score):
+                continue
+            result.append(NodeScore(node=node, ego=ego, score=score))
         return result
 
 
