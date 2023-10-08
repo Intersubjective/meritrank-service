@@ -89,14 +89,14 @@ class Query:
     def edges(self, info: Info, src: str) -> list[Edge]:
         return [Edge(src=e[0], dest=e[1], weight=e[2]) for e in info.context.mr.get_node_edges(src)]
 
-    @handle_exceptions
     @strawberry.field
+    @handle_exceptions
     def score(self, info, ego: str, node: str) -> NodeScore:
         score = info.context.mr.get_node_score(ego, node)
         return NodeScore(node=node, ego=ego, score=score)
 
-    @handle_exceptions
     @strawberry.field
+    @handle_exceptions
     def scores(self, info, ego: str,
                where: NodeScoreWhereInput | None = None,
                limit: int | None = None) -> list[NodeScore]:
@@ -112,9 +112,6 @@ class Query:
         """
         This handle returns a graph of user's connections to other users.
         The graph is specific to usage in the Gravity/A2 social network.
-        :param ego: ego to get the graph for
-        :param include_negative: whether to include nodes with negative scores
-        :return: GravityGraph
         """
         LOGGER.info("Getting gravity graph (%s, include_negative=%s)", ego, "True" if include_negative else "False")
         edges, users, beacons, comments = info.context.mr.gravity_graph(ego, include_negative)

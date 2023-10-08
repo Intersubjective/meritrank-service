@@ -1,3 +1,5 @@
+from typing import Optional
+
 import strawberry
 
 
@@ -17,7 +19,7 @@ class Edge:
 
 @strawberry.type
 class GravityGraph:
-    edges: list[Edge]
-    users: list[NodeScore]
-    beacons: list[NodeScore]
-    comments: list[NodeScore]
+    edges: Optional[list[Edge]] = None
+    users: Optional[list[NodeScore]] = None
+    beacons: Optional[list[NodeScore]] = None
+    comments: Optional[list[NodeScore]] = None
