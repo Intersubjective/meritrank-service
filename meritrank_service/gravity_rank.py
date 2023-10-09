@@ -31,7 +31,7 @@ class GravityRank(LazyMeritRank):
                     self.logger.warning(f"Unknown node type: {node}")
         return users, beacons, comments
 
-    def get_user_outgoing_edges_by_node_type(self, user_ids, beacons_ids, comments_ids):
+    def get_inedges_by_node_type(self, user_ids, beacons_ids, comments_ids):
         # Incoming edges
         user_edges = {}
         beacon_edges = {}
@@ -45,12 +45,12 @@ class GravityRank(LazyMeritRank):
                     # This one points out of the subgraph, so don't include it
                     # There can be two reasons for this - negative scores and fade out (alpha)
                     continue
-                edges_dict = user_edges
-                if edge.dest in comments_ids:
-                    edges_dict = comment_edges
-                elif edge.dest in beacons_ids:
-                    edges_dict = beacon_edges
-                edges_dict.setdefault(edge.dest, []).append(edge)
+                if edge.dest.startswith("C"):
+                    comment_edges.setdefault(edge.dest, []).append(edge)
+                elif edge.dest.startswith("B"):
+                    beacon_edges.setdefault(edge.dest, []).append(edge)
+                else:
+                    user_edges.setdefault(edge.dest, []).append(edge)
         return user_edges, beacon_edges, comment_edges
 
     def get_edges_for_node(self, node):
@@ -81,8 +81,8 @@ class GravityRank(LazyMeritRank):
         comment_ids = comments.keys()
 
         result_edges = []
-        user_edges, beacon_edges, comment_edges = self.get_user_outgoing_edges_by_node_type(user_ids, beacon_ids,
-                                                                                            comment_ids)
+        user_edges, beacon_edges, comment_edges = self.get_inedges_by_node_type(user_ids, beacon_ids,
+                                                                                comment_ids)
 
         # Add all user-related edges
         for user, edges in user_edges.items():
@@ -121,8 +121,11 @@ class GravityRank(LazyMeritRank):
                 # Completely omit personal beacons.
                 continue
             result_edges.extend(outgoing_edges)
+            result_edges.extend(edges)
 
         legit_nodes = set()
+        # Guarantee that ego will always be in the result, even if there are no edges from it
+        legit_nodes.add(ego)
         for edge in result_edges:
             legit_nodes.add(edge.src)
             legit_nodes.add(edge.dest)
@@ -130,5 +133,6 @@ class GravityRank(LazyMeritRank):
         users_filtered = filter_dict_by_set(users, legit_nodes)
         beacons_filtered = filter_dict_by_set(beacons, legit_nodes)
         comments_filtered = filter_dict_by_set(comments, legit_nodes)
+        users_filtered[ego] = users[ego]
 
         return result_edges, users_filtered, beacons_filtered, comments_filtered
