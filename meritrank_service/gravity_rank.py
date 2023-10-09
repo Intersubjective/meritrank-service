@@ -5,6 +5,10 @@ from meritrank_python.lazy import LazyMeritRank
 from meritrank_service.gql_types import Edge
 
 
+def filter_dict_by_set(d, s):
+    return {k: v for k, v in d.items() if k in s}
+
+
 class GravityRank(LazyMeritRank):
     def nodes_by_type(self, ego, include_negative=False):
         users = {}
@@ -74,7 +78,8 @@ class GravityRank(LazyMeritRank):
         comment_ids = comments.keys()
 
         result_edges = []
-        user_edges, beacon_edges, comment_edges = self.get_user_outgoing_edges_by_node_type(user_ids, beacon_ids, comment_ids)
+        user_edges, beacon_edges, comment_edges = self.get_user_outgoing_edges_by_node_type(user_ids, beacon_ids,
+                                                                                            comment_ids)
 
         # Add all user-related edges
         for user, edges in user_edges.items():
@@ -97,15 +102,30 @@ class GravityRank(LazyMeritRank):
                 outgoing_edges = self.get_edges_for_node(comment)
                 if len(outgoing_edges) != 1:
                     self.logger.warning(f"Multiple or no outgoing edges for comment {comment}")
+                elif outgoing_edges[0].dest == ego:
+                    # Completely omit personal comments.
+                    continue
                 result_edges.extend(outgoing_edges)
 
         # Add edges from beacons
         self.logger.debug(f"Gravity graph: adding edges from beacons. Ego {ego}")
         for beacon, edges in beacon_edges.items():
-            # Do the same for beacons - except we show even leaf beacons
+            # Do the same for beacons - except we show even leaf beacons.
             outgoing_edges = self.get_edges_for_node(beacon)
             if len(outgoing_edges) != 1:
                 self.logger.warning(f"Multiple or no outgoing edges for beacon {beacon}")
+            elif outgoing_edges[0].dest == ego:
+                # Completely omit personal beacons.
+                continue
             result_edges.extend(outgoing_edges)
 
-        return result_edges, users, beacons, comments
+        legit_nodes = set()
+        for edge in result_edges:
+            legit_nodes.add(edge.src)
+            legit_nodes.add(edge.dest)
+
+        users_filtered = filter_dict_by_set(users, legit_nodes)
+        beacons_filtered = filter_dict_by_set(beacons, legit_nodes)
+        comments_filtered = filter_dict_by_set(comments, legit_nodes)
+
+        return result_edges, users_filtered, beacons_filtered, comments_filtered
