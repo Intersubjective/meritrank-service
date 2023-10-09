@@ -10,13 +10,15 @@ def filter_dict_by_set(d, s):
 
 
 class GravityRank(LazyMeritRank):
-    def nodes_by_type(self, ego, include_negative=False):
+    def nodes_by_type(self, ego, min_abs_score=None, include_negative=False):
         users = {}
         beacons = {}
         comments = {}
         self.logger.debug(f"Gravity graph: filtering edges by type. Ego {ego}")
         for node, score in self.get_ranks(ego).items():
             if not include_negative and score <= 0.0:
+                continue
+            if min_abs_score is not None and abs(score) < min_abs_score:
                 continue
             match node[0]:
                 case 'U':
@@ -54,7 +56,7 @@ class GravityRank(LazyMeritRank):
     def get_edges_for_node(self, node):
         return [Edge(src=e[0], dest=e[1], weight=e[2]) for e in self.get_node_edges(node)]
 
-    def gravity_graph(self, ego: str, include_negative: bool = False):
+    def gravity_graph(self, ego: str, min_abs_score: float = None, include_negative: bool = False):
         """
         In Gravity social network, prefixes in the node names determine the type of the node.
         The prefixes are:
@@ -69,9 +71,10 @@ class GravityRank(LazyMeritRank):
         The graph is returned as a list of edges, and a list of nodes.
         :param ego: ego to get the graph for
         :param include_negative: whether to include nodes with negative scores
+        :param min_abs_score: minimum absolute score of nodes to include in the graph
         :return: (List[Edge], List[NodeScore])
         """
-        users, beacons, comments = self.nodes_by_type(ego, include_negative)
+        users, beacons, comments = self.nodes_by_type(ego, min_abs_score, include_negative)
 
         user_ids = users.keys()
         beacon_ids = beacons.keys()

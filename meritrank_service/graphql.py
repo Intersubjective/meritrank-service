@@ -109,7 +109,7 @@ class Query:
         return result
 
     @strawberry.field
-    def gravity_graph(self, info, ego: str) -> GravityGraph:
+    def gravity_graph(self, info, ego: str, min_abs_score: float = None) -> GravityGraph:
         # ACHTUNG: Strawberry presents bools as str in schema - a BUG
         """
         This handle returns a graph of user's connections to other users.
@@ -117,7 +117,7 @@ class Query:
         """
         include_negative = False
         LOGGER.info("Getting gravity graph (%s, include_negative=%s)", ego, "True" if include_negative else "False")
-        edges, users, beacons, comments = info.context.mr.gravity_graph(ego, include_negative)
+        edges, users, beacons, comments = info.context.mr.gravity_graph(ego, min_abs_score, include_negative)
         return GravityGraph(
             edges=edges,
             users=ego_score_dict_to_list(ego, users),
