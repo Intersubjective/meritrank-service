@@ -10,6 +10,7 @@ def simple_gravity_graph():
             "B1": {"weight": 1.0},
             "B2": {"weight": 1.0},
             "C3": {"weight": 1.0},
+            "C4": {"weight": 1.0},
             "U2": {"weight": 1.0},
         },
         "U2": {
@@ -21,6 +22,7 @@ def simple_gravity_graph():
         "B2": {"U2": {"weight": 1.0}},
         "U3": {
             "C3": {"weight": 1.0},
+            "C4": {"weight": 1.0},
             "B33": {"weight": 1.0},
         },
         "B33": {
@@ -29,6 +31,10 @@ def simple_gravity_graph():
         "C3": {
             "U3": {"weight": 1.0},
         },
+        "C4": {
+            "U3": {"weight": 1.0},
+        },
+
 
     }
 
