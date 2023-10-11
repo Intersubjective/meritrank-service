@@ -35,5 +35,5 @@ def simple_gravity_graph():
 
 def test_gravity_graph(simple_gravity_graph):
     g = GravityRank(graph=simple_gravity_graph)
-    result = g.gravity_graph("U1", ["U1"])
+    result = g.gravity_graph_filtered("U1", ["U1"])
     print (result)

@@ -2,7 +2,6 @@ from os import getenv
 
 from fastapi import FastAPI
 
-from meritrank_python.lazy import LazyMeritRank
 from meritrank_service import __version__ as meritrank_service_version
 
 from meritrank_service.graphql import get_graphql_app

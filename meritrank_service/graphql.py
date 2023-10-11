@@ -1,4 +1,3 @@
-import typing
 from functools import wraps
 from typing import Optional
 
@@ -9,8 +8,8 @@ from meritrank_python.rank import IncrementalMeritRank, NodeDoesNotExist, EgoNot
 from strawberry.fastapi import GraphQLRouter, BaseContext
 from strawberry.types import Info
 
-from meritrank_service.asgi import LazyMeritRank
 from meritrank_service.gql_types import Edge, NodeScore, GravityGraph
+from meritrank_service.gravity_rank import GravityRank
 from meritrank_service.log import LOGGER
 
 
@@ -119,8 +118,9 @@ class Query:
         The graph is specific to usage in the Gravity/A2 social network.
         """
         LOGGER.info("Getting gravity graph (%s, include_negative=%s)", ego, "True" if positive_only else "False")
-        edges, users, beacons, comments = info.context.mr.gravity_graph(ego, [focus], min_abs_score, positive_only,
-                                                                        recurse_depth)
+        edges, users, beacons, comments = info.context.mr.gravity_graph_filtered(ego, [focus], min_abs_score,
+                                                                                 positive_only,
+                                                                                 recurse_depth)
         return GravityGraph(
             edges=edges,
             users=ego_score_dict_to_list(ego, users),
@@ -147,7 +147,7 @@ class CustomContext(BaseContext):
 schema = strawberry.Schema(Query, Mutation)
 
 
-def get_graphql_app(rank: LazyMeritRank):
+def get_graphql_app(rank: GravityRank):
     def get_meritrank_instance():
         return CustomContext(rank)
 

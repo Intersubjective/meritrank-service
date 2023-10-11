@@ -30,6 +30,27 @@ class GravityRank(LazyMeritRank):
                 self.logger.warning(f"Unknown node type: {node}")
         return users, beacons, comments
 
+    def gravity_graph_filtered(self, *args, **kwargs):
+
+        edges, users, beacons, comments = self.gravity_graph(*args, **kwargs)
+
+        # Here we use the fact that transitive edges in the algorithm are always
+        # one after the other, e.g.  [(U->C), (C->U)]
+        filtered_edges = []
+        for i, edge in enumerate(edges):
+            if edge.dest.startswith("C"):
+                if i < len(edges):
+                    if edge.dest != edges[i + 1].src:
+                        # if the edge is unpaired, skip it
+                        comments.pop(edge.dest, None)
+                        continue
+                if i == len(edges) - 1:
+                    # Always remove the last comment edge if it is non-transitive
+                    comments.pop(edge.dest, None)
+                    continue
+            filtered_edges.append(edge)
+        return filtered_edges, users, beacons, comments
+
     def gravity_graph(self, ego: str, focus_stack: list[str],
                       min_abs_score: float = None,
                       positive_only: bool = True,
