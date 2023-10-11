@@ -10,53 +10,30 @@ def filter_dict_by_set(d, s):
 
 
 class GravityRank(LazyMeritRank):
-    def nodes_by_type(self, ego, min_abs_score=None, include_negative=False):
-        users = {}
-        beacons = {}
-        comments = {}
-        self.logger.debug(f"Gravity graph: filtering edges by type. Ego {ego}")
-        for node, score in self.get_ranks(ego).items():
-            if not include_negative and score <= 0.0:
-                continue
-            if min_abs_score is not None and abs(score) < min_abs_score:
-                continue
-            match node[0]:
-                case 'U':
-                    users[node] = score
-                case 'C':
-                    comments[node] = score
-                case 'B':
-                    beacons[node] = score
-                case _:
-                    self.logger.warning(f"Unknown node type: {node}")
-        return users, beacons, comments
-
-    def get_inedges_by_node_type(self, user_ids, beacons_ids, comments_ids):
-        # Incoming edges
-        user_edges = {}
-        beacon_edges = {}
-        comment_edges = {}
-        all_nodes = set(itertools.chain(user_ids, beacons_ids, comments_ids))
-        # Get a closed subgraph based on returned ids
-        for user in user_ids:
-            self.logger.debug(f"Gravity graph: getting outgoing edges by type. User {user}")
-            for edge in self.get_edges_for_node(user):
-                if edge.dest not in all_nodes:
-                    # This one points out of the subgraph, so don't include it
-                    # There can be two reasons for this - negative scores and fade out (alpha)
-                    continue
-                if edge.dest.startswith("C"):
-                    comment_edges.setdefault(edge.dest, []).append(edge)
-                elif edge.dest.startswith("B"):
-                    beacon_edges.setdefault(edge.dest, []).append(edge)
-                else:
-                    user_edges.setdefault(edge.dest, []).append(edge)
-        return user_edges, beacon_edges, comment_edges
 
     def get_edges_for_node(self, node):
         return [Edge(src=e[0], dest=e[1], weight=e[2]) for e in self.get_node_edges(node)]
 
-    def gravity_graph(self, ego: str, min_abs_score: float = None, include_negative: bool = False):
+    def filter_node_by_type(self, ego, node):
+        users = {}
+        beacons = {}
+        comments = {}
+        score = self.get_node_score(ego, node)
+        match node[0]:
+            case 'U':
+                users[node] = score
+            case 'C':
+                comments[node] = score
+            case 'B':
+                beacons[node] = score
+            case _:
+                self.logger.warning(f"Unknown node type: {node}")
+        return users, beacons, comments
+
+    def gravity_graph(self, ego: str, focus_stack: list[str],
+                      min_abs_score: float = None,
+                      positive_only: bool = True,
+                      max_recurse_depth: int = 2):
         """
         In Gravity social network, prefixes in the node names determine the type of the node.
         The prefixes are:
@@ -70,69 +47,39 @@ class GravityRank(LazyMeritRank):
         Basically, this means "everything except terminal/leaf/dead-end comments"
         The graph is returned as a list of edges, and a list of nodes.
         :param ego: ego to get the graph for
-        :param include_negative: whether to include nodes with negative scores
+        :param focus_stack: stack of focus node to get the graph around. Start with e.g. [your_node]
+        :param positive_only: only include nodes with positive scores
         :param min_abs_score: minimum absolute score of nodes to include in the graph
+        :param max_recurse_depth: how deep to recurse into the graph
         :return: (List[Edge], List[NodeScore])
         """
-        users, beacons, comments = self.nodes_by_type(ego, min_abs_score, include_negative)
 
-        user_ids = users.keys()
-        beacon_ids = beacons.keys()
-        comment_ids = comments.keys()
+        edges = []
+        users, beacons, comments = self.filter_node_by_type(ego, focus_stack[-1])
 
-        result_edges = []
-        user_edges, beacon_edges, comment_edges = self.get_inedges_by_node_type(user_ids, beacon_ids,
-                                                                                comment_ids)
+        if len(focus_stack) > max_recurse_depth:
+            return edges, users, beacons, comments
 
-        # Add all user-related edges
-        for user, edges in user_edges.items():
-            result_edges.extend(edges)
+        for edge in self.get_edges_for_node(focus_stack[-1]):
+            dest_score = self.get_node_score(ego, edge.dest)
+            if (
+                    (min_abs_score is not None and dest_score < min_abs_score) or
+                    (positive_only and dest_score <= 0.0) or
+                    (edge.dest == ego) or
+                    (len(focus_stack) >= 2 and edge.dest == focus_stack[-2])  # do not explore back edges
 
-        # Add edges from comments
-        self.logger.debug(f"Gravity graph: adding edges from comments. Ego {ego}")
-        for comment, edges in comment_edges.items():
-            # Comments get special treatment. We want to only include
-            # transitive comments, e.g. something ego or their friends voted for.
-            # To do so, we use a simple heuristic: if there is two or more edges
-            # leading to a comment, we include those. Otherwise, we don't include anything,
-            # because the only upvote is from the author himself.
-            # Also, note that we don't include the autogenerated edges from the user to
-            # the comment itself. That's because we never show ego's comments in the graph.
-            if len(edges) >= 2:
-                result_edges.extend(edges)
-                # This is extremely dumb, but this is the simplest way to grab
-                # the edge back to the comment's author.
-                outgoing_edges = self.get_edges_for_node(comment)
-                if len(outgoing_edges) != 1:
-                    self.logger.warning(f"Multiple or no outgoing edges for comment {comment}")
-                elif outgoing_edges[0].dest == ego:
-                    # Completely omit personal comments.
-                    continue
-                result_edges.extend(outgoing_edges)
-
-        # Add edges from beacons
-        self.logger.debug(f"Gravity graph: adding edges from beacons. Ego {ego}")
-        for beacon, edges in beacon_edges.items():
-            # Do the same for beacons - except we show even leaf beacons.
-            outgoing_edges = self.get_edges_for_node(beacon)
-            if len(outgoing_edges) != 1:
-                self.logger.warning(f"Multiple or no outgoing edges for beacon {beacon}")
-            elif outgoing_edges[0].dest == ego:
-                # Completely omit personal beacons.
+            ):
                 continue
-            result_edges.extend(outgoing_edges)
-            result_edges.extend(edges)
 
-        legit_nodes = set()
-        # Guarantee that ego will always be in the result, even if there are no edges from it
-        legit_nodes.add(ego)
-        for edge in result_edges:
-            legit_nodes.add(edge.src)
-            legit_nodes.add(edge.dest)
+            e, u, b, c = self.gravity_graph(ego, focus_stack + [edge.dest],
+                                            min_abs_score=min_abs_score,
+                                            positive_only=positive_only,
+                                            max_recurse_depth=max_recurse_depth)
+            if u or b or c:
+                edges.append(edge)
+            edges.extend(e)
+            users.update(u)
+            beacons.update(b)
+            comments.update(c)
 
-        users_filtered = filter_dict_by_set(users, legit_nodes)
-        beacons_filtered = filter_dict_by_set(beacons, legit_nodes)
-        comments_filtered = filter_dict_by_set(comments, legit_nodes)
-        users_filtered[ego] = users[ego]
-
-        return result_edges, users_filtered, beacons_filtered, comments_filtered
+        return edges, users, beacons, comments
