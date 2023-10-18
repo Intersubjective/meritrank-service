@@ -1,19 +1,19 @@
 [[package]]
 name = "anyio"
-version = "4.0.0"
+version = "3.7.1"
 description = "High level compatibility layer for multiple asynchronous event loop implementations"
 category = "main"
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.7"
 
 [package.dependencies]
 idna = ">=2.8"
 sniffio = ">=1.1"
 
 [package.extras]
-doc = ["Sphinx (>=7)", "packaging", "sphinx-autodoc-typehints (>=1.2.0)"]
-test = ["anyio[trio]", "coverage[toml] (>=7)", "hypothesis (>=4.0)", "psutil (>=5.9)", "pytest (>=7.0)", "pytest-mock (>=3.6.1)", "trustme", "uvloop (>=0.17)"]
-trio = ["trio (>=0.22)"]
+doc = ["Sphinx", "packaging", "sphinx-autodoc-typehints (>=1.2.0)", "sphinx-rtd-theme (>=1.2.2)", "sphinxcontrib-jquery"]
+test = ["anyio[trio]", "coverage[toml] (>=4.5)", "hypothesis (>=4.0)", "mock (>=4)", "psutil (>=5.9)", "pytest (>=7.0)", "pytest-mock (>=3.6.1)", "trustme", "uvloop (>=0.17)"]
+trio = ["trio (<0.22)"]
 
 [[package]]
 name = "asyncpg"
@@ -48,7 +48,7 @@ python-versions = ">=3.6"
 
 [[package]]
 name = "classy-fastapi"
-version = "0.4.0"
+version = "0.5.1"
 description = "Class based routing for FastAPI"
 category = "main"
 optional = false
@@ -79,19 +79,20 @@ toml = ["tomli"]
 
 [[package]]
 name = "fastapi"
-version = "0.99.1"
+version = "0.103.2"
 description = "FastAPI framework, high performance, easy to learn, fast to code, ready for production"
 category = "main"
 optional = false
 python-versions = ">=3.7"
 
 [package.dependencies]
-pydantic = ">=1.7.4,<1.8 || >1.8,<1.8.1 || >1.8.1,<2.0.0"
+anyio = ">=3.7.1,<4.0.0"
+pydantic = ">=1.7.4,<1.8 || >1.8,<1.8.1 || >1.8.1,<2.0.0 || >2.0.0,<2.0.1 || >2.0.1,<2.1.0 || >2.1.0,<3.0.0"
 starlette = ">=0.27.0,<0.28.0"
 typing-extensions = ">=4.5.0"
 
 [package.extras]
-all = ["email-validator (>=1.1.1)", "httpx (>=0.23.0)", "itsdangerous (>=1.1.0)", "jinja2 (>=2.11.2)", "orjson (>=3.2.1)", "python-multipart (>=0.0.5)", "pyyaml (>=5.3.1)", "ujson (>=4.0.1,!=4.0.2,!=4.1.0,!=4.2.0,!=4.3.0,!=5.0.0,!=5.1.0)", "uvicorn[standard] (>=0.12.0)"]
+all = ["email-validator (>=2.0.0)", "httpx (>=0.23.0)", "itsdangerous (>=1.1.0)", "jinja2 (>=2.11.2)", "orjson (>=3.2.1)", "pydantic-extra-types (>=2.0.0)", "pydantic-settings (>=2.0.0)", "python-multipart (>=0.0.5)", "pyyaml (>=5.3.1)", "ujson (>=4.0.1,!=4.0.2,!=4.1.0,!=4.2.0,!=4.3.0,!=5.0.0,!=5.1.0)", "uvicorn[standard] (>=0.12.0)"]
 
 [[package]]
 name = "graphql-core"
@@ -346,7 +347,7 @@ full = ["httpx (>=0.22.0)", "itsdangerous", "jinja2", "python-multipart", "pyyam
 
 [[package]]
 name = "strawberry-graphql"
-version = "0.209.6"
+version = "0.209.7"
 description = "A library for creating GraphQL APIs"
 category = "main"
 optional = false
@@ -387,12 +388,12 @@ python-versions = ">=3.8"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.11"
-content-hash = "74f8d3f3b847df271efc2e5d86a6c836c4b55fac89ba54842174eeb8e1c6c9c5"
+content-hash = "57bb79a1077572a3f17e65abae7dc48c9b32386a51b38a3d88795010ea2296f7"
 
 [metadata.files]
 anyio = [
-    {file = "anyio-4.0.0-py3-none-any.whl", hash = "sha256:cfdb2b588b9fc25ede96d8db56ed50848b0b649dca3dd1df0b11f683bb9e0b5f"},
-    {file = "anyio-4.0.0.tar.gz", hash = "sha256:f7ed51751b2c2add651e5747c891b47e26d2a21be5d32d9311dfe9692f3e5d7a"},
+    {file = "anyio-3.7.1-py3-none-any.whl", hash = "sha256:91dee416e570e92c64041bd18b900d1d6fa78dff7048769ce5ac5ddad004fbb5"},
+    {file = "anyio-3.7.1.tar.gz", hash = "sha256:44a3c9aba0f5defa43261a8b3efb97891f2bd7d804e0e1f56419befa1adfc780"},
 ]
 asyncpg = [
     {file = "asyncpg-0.28.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:0a6d1b954d2b296292ddff4e0060f494bb4270d87fb3655dd23c5c6096d16d83"},
@@ -445,8 +446,8 @@ certifi = [
     {file = "certifi-2023.7.22.tar.gz", hash = "sha256:539cc1d13202e33ca466e88b2807e29f4c13049d6d87031a3c110744495cb082"},
 ]
 classy-fastapi = [
-    {file = "classy-fastapi-0.4.0.tar.gz", hash = "sha256:c5e8dcfe10a8f188cafa27afacd220d54f004c6721d4f69d714825c1cf7f96de"},
-    {file = "classy_fastapi-0.4.0-py3-none-any.whl", hash = "sha256:554168d128d2b7b4577780689176ec25d70ae2696e46a21130990704ce8ca381"},
+    {file = "classy-fastapi-0.5.1.tar.gz", hash = "sha256:86c4a87b34686baf4476086e1212260d15dc972cfcaab7a363fdadc7ffc4e9ad"},
+    {file = "classy_fastapi-0.5.1-py3-none-any.whl", hash = "sha256:77c70884ebc21feba537437ab5b73b724493df3233da639d68dcb9ffa4c20d4a"},
 ]
 colorama = [
     {file = "colorama-0.4.6-py2.py3-none-any.whl", hash = "sha256:4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6"},
@@ -505,8 +506,8 @@ coverage = [
     {file = "coverage-6.5.0.tar.gz", hash = "sha256:f642e90754ee3e06b0e7e51bce3379590e76b7f76b708e1a71ff043f87025c84"},
 ]
 fastapi = [
-    {file = "fastapi-0.99.1-py3-none-any.whl", hash = "sha256:976df7bab51ac7beda9f68c4513b8c4490b5c1135c72aafd0a5ee4023ec5282e"},
-    {file = "fastapi-0.99.1.tar.gz", hash = "sha256:ac78f717cd80d657bd183f94d33b9bda84aa376a46a9dab513586b8eef1dc6fc"},
+    {file = "fastapi-0.103.2-py3-none-any.whl", hash = "sha256:3270de872f0fe9ec809d4bd3d4d890c6d5cc7b9611d721d6438f9dacc8c4ef2e"},
+    {file = "fastapi-0.103.2.tar.gz", hash = "sha256:75a11f6bfb8fc4d2bec0bd710c2d5f2829659c0e8c0afd5560fdda6ce25ec653"},
 ]
 graphql-core = [
     {file = "graphql-core-3.2.3.tar.gz", hash = "sha256:06d2aad0ac723e35b1cb47885d3e5c45e956a53bc1b209a9fc5369007fe46676"},
@@ -694,8 +695,8 @@ starlette = [
     {file = "starlette-0.27.0.tar.gz", hash = "sha256:6a6b0d042acb8d469a01eba54e9cda6cbd24ac602c4cd016723117d6a7e73b75"},
 ]
 strawberry-graphql = [
-    {file = "strawberry_graphql-0.209.6-py3-none-any.whl", hash = "sha256:b92f42612633264fd2d815ae811cb619350926be63d2330913c4b1bcc7d0dd78"},
-    {file = "strawberry_graphql-0.209.6.tar.gz", hash = "sha256:abd6c3b3a8ddb2e28a16142e7a6b1a380e4c00f5a72caa2eba6bdc2a99e50fb5"},
+    {file = "strawberry_graphql-0.209.7-py3-none-any.whl", hash = "sha256:4277d0365aca113fef7697ab7cfe430e151748e26b6d00f773d58a2bf5a18eb1"},
+    {file = "strawberry_graphql-0.209.7.tar.gz", hash = "sha256:e4fd764e6fa68130d106b84a3ef758b9a3bda472f98934d2a0256838023f9a1e"},
 ]
 typing-extensions = [
     {file = "typing_extensions-4.8.0-py3-none-any.whl", hash = "sha256:8f92fc8806f9a6b641eaa5318da32b44d401efaac0f6678c9bc448ba3605faa0"},

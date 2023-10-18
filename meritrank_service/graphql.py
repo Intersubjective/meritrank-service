@@ -99,7 +99,7 @@ class Query:
     @handle_exceptions
     def scores(self, info, ego: str,
                where: NodeScoreWhereInput | None = None,
-               limit: int | None = None) -> list[NodeScore]:
+               limit: int = None) -> list[NodeScore]:
         result = []
         for node, score in info.context.mr.get_ranks(ego, limit=limit).items():
             if where is not None and not where.match(node, score):
@@ -109,9 +109,9 @@ class Query:
 
     @strawberry.field
     def gravity_graph(self, info, ego: str, focus: str,
-                      min_abs_score: Optional[float] = None,
-                      positive_only: Optional[bool] = True,
-                      recurse_depth: Optional[int] = 2,
+                      min_abs_score: float = None,
+                      positive_only: bool = None,
+                      recurse_depth: int = 2,
                       ) -> GravityGraph:
         """
         This handle returns a graph of user's connections to other users.
