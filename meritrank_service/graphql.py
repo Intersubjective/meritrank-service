@@ -109,7 +109,8 @@ class Query:
         return result
 
     @strawberry.field
-    def gravity_graph(self, info, ego: str, focus: str,
+    def gravity_graph(self, info, ego: str,
+                      focus: Optional[str] = UNSET,
                       min_abs_score: Optional[float] = UNSET,
                       positive_only: Optional[bool] = UNSET,
                       recurse_depth: Optional[int] = UNSET,
@@ -120,7 +121,7 @@ class Query:
         """
         LOGGER.info("Getting gravity graph (%s, include_negative=%s)", ego, "True" if positive_only else "False")
         edges, users, beacons, comments = info.context.mr.gravity_graph_filtered(
-            ego, [focus],
+            ego, [focus or ego],
             min_abs_score or None,
             positive_only or None,
             recurse_depth or 2)
