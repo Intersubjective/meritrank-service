@@ -4,6 +4,7 @@ from typing import Optional
 import strawberry
 from fastapi import Depends
 from meritrank_python.rank import IncrementalMeritRank, NodeDoesNotExist, EgoNotInitialized, EgoCounterEmpty
+from strawberry import UNSET
 
 from strawberry.fastapi import GraphQLRouter, BaseContext
 from strawberry.types import Info
@@ -30,42 +31,42 @@ def handle_exceptions(func):
 
 @strawberry.input
 class NodeInput:
-    like: Optional[str] = None
+    like: Optional[str] = UNSET
 
     def match(self, node) -> bool:
-        if self.like is not None:
+        if self.like is not UNSET:
             return node.startswith(self.like)
         return True
 
 
 @strawberry.input
 class ScoreInput:
-    lte: Optional[float] = None
-    lt: Optional[float] = None
-    gte: Optional[float] = None
-    gt: Optional[float] = None
+    lte: Optional[float] = UNSET
+    lt: Optional[float] = UNSET
+    gte: Optional[float] = UNSET
+    gt: Optional[float] = UNSET
 
     def match(self, score) -> bool:
-        if (lte := self.lte) is not None and not (score <= lte):
+        if (lte := self.lte) is not UNSET and not (score <= lte):
             return False
-        if (lt := self.lt) is not None and not (score < lt):
+        if (lt := self.lt) is not UNSET and not (score < lt):
             return False
-        if (gte := self.gte) is not None and not (score >= gte):
+        if (gte := self.gte) is not UNSET and not (score >= gte):
             return False
-        if (gt := self.gt) is not None and not (score > gt):
+        if (gt := self.gt) is not UNSET and not (score > gt):
             return False
         return True
 
 
 @strawberry.input
 class NodeScoreWhereInput:
-    node: Optional[NodeInput] = None
-    score: Optional[ScoreInput] = None
+    node: Optional[NodeInput] = UNSET
+    score: Optional[ScoreInput] = UNSET
 
     def match(self, node, score) -> bool:
-        if self.node is not None and not self.node.match(node):
+        if self.node is not UNSET and not self.node.match(node):
             return False
-        if self.score is not None and not self.score.match(score):
+        if self.score is not UNSET and not self.score.match(score):
             return False
         return True
 
@@ -98,29 +99,31 @@ class Query:
     @strawberry.field
     @handle_exceptions
     def scores(self, info, ego: str,
-               where: NodeScoreWhereInput | None = None,
-               limit: int = None) -> list[NodeScore]:
+               where: Optional[NodeScoreWhereInput] = UNSET,
+               limit: Optional[int] = UNSET) -> list[NodeScore]:
         result = []
-        for node, score in info.context.mr.get_ranks(ego, limit=limit).items():
-            if where is not None and not where.match(node, score):
+        for node, score in info.context.mr.get_ranks(ego, limit=limit or None).items():
+            if where is not UNSET and not where.match(node, score):
                 continue
             result.append(NodeScore(node=node, ego=ego, score=score))
         return result
 
     @strawberry.field
     def gravity_graph(self, info, ego: str, focus: str,
-                      min_abs_score: float = None,
-                      positive_only: bool = None,
-                      recurse_depth: int = 2,
+                      min_abs_score: Optional[float] = UNSET,
+                      positive_only: Optional[bool] = UNSET,
+                      recurse_depth: Optional[int] = UNSET,
                       ) -> GravityGraph:
         """
         This handle returns a graph of user's connections to other users.
         The graph is specific to usage in the Gravity/A2 social network.
         """
         LOGGER.info("Getting gravity graph (%s, include_negative=%s)", ego, "True" if positive_only else "False")
-        edges, users, beacons, comments = info.context.mr.gravity_graph_filtered(ego, [focus], min_abs_score,
-                                                                                 positive_only,
-                                                                                 recurse_depth)
+        edges, users, beacons, comments = info.context.mr.gravity_graph_filtered(
+            ego, [focus],
+            min_abs_score or None,
+            positive_only or None,
+            recurse_depth or 2)
         return GravityGraph(
             edges=edges,
             users=ego_score_dict_to_list(ego, users),
