@@ -166,7 +166,7 @@ python-versions = ">=3.7"
 
 [[package]]
 name = "meritrank-python"
-version = "0.2.4"
+version = "0.2.6"
 description = "MeritRank decentralized, sybil-resistant, personalized ranking algorithm library"
 category = "main"
 optional = false
@@ -388,7 +388,7 @@ python-versions = ">=3.8"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.11"
-content-hash = "57bb79a1077572a3f17e65abae7dc48c9b32386a51b38a3d88795010ea2296f7"
+content-hash = "48747a55a322daa869f4f0000102ece94fe2fa76890bd71671f759574f264024"
 
 [metadata.files]
 anyio = [
@@ -534,8 +534,8 @@ iniconfig = [
     {file = "iniconfig-2.0.0.tar.gz", hash = "sha256:2d91e135bf72d31a410b17c16da610a82cb55f6b0477d1a902134b24a455b8b3"},
 ]
 meritrank-python = [
-    {file = "meritrank_python-0.2.4-py3-none-any.whl", hash = "sha256:ab42550b798b7e8e3d42dc73f236b3ebc644d3f14707008eeeccf16290e18f58"},
-    {file = "meritrank_python-0.2.4.tar.gz", hash = "sha256:273b9b5e20bde210c9a821dad33a9d13f4bb313099385a3e69b41244750ff5f2"},
+    {file = "meritrank_python-0.2.6-py3-none-any.whl", hash = "sha256:be08a024069b2b9097c00db06e54c6122da2da91e1c002493d73277ae9a819ee"},
+    {file = "meritrank_python-0.2.6.tar.gz", hash = "sha256:2bef4811d2c2e69b105ebd9fce6ddc9274fd495851fda94dbf8a04519eb48b39"},
 ]
 networkx = [
     {file = "networkx-2.8.8-py3-none-any.whl", hash = "sha256:e435dfa75b1d7195c7b8378c3859f0445cd88c6b0375c181ed66823a9ceb7524"},

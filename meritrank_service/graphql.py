@@ -115,17 +115,20 @@ class Query:
                       min_abs_score: Optional[float] = UNSET,
                       positive_only: Optional[bool] = UNSET,
                       recurse_depth: Optional[int] = UNSET,
-                      ) -> GravityGraph:
+                      ) -> Optional[GravityGraph]:
         """
         This handle returns a graph of user's connections to other users.
         The graph is specific to usage in the Gravity/A2 social network.
         """
         LOGGER.info("Getting gravity graph (%s, include_negative=%s)", ego, "True" if positive_only else "False")
-        edges, users, beacons, comments = info.context.mr.gravity_graph_filtered(
-            ego, [focus or ego],
-            min_abs_score or None,
-            positive_only or None,
-            recurse_depth or 2)
+        try:
+            edges, users, beacons, comments = info.context.mr.gravity_graph_filtered(
+                ego, [focus or ego],
+                min_abs_score or None,
+                positive_only or None,
+                recurse_depth or 2)
+        except NodeDoesNotExist:
+            return None
         return GravityGraph(
             edges=edges,
             users=ego_score_dict_to_list(ego, users),
