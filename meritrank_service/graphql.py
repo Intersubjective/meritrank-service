@@ -101,11 +101,18 @@ class Query:
     @handle_exceptions
     def scores(self, info, ego: str,
                where: Optional[NodeScoreWhereInput] = UNSET,
-               limit: Optional[int] = UNSET) -> list[NodeScore]:
+               limit: Optional[int] = UNSET,
+               hide_personal: Optional[bool] = UNSET
+               ) -> Optional[list[NodeScore]]:
         result = []
         for node, score in info.context.mr.get_ranks(ego, limit=limit or None).items():
             if where is not UNSET and not where.match(node, score):
                 continue
+            if hide_personal:
+                if node.startswith("C") or node.startswith("B"):
+                    if info.context.mr.get_edge(node, ego):
+                        continue
+
             result.append(NodeScore(node=node, ego=ego, score=score))
         return result
 
@@ -139,16 +146,21 @@ class Query:
 
     @strawberry.field
     @handle_exceptions
-    def global_scores(self, info,
-               where: Optional[NodeScoreWhereInput] = UNSET,
-               limit: Optional[int] = UNSET,
-               use_cache: Optional[int] = UNSET
+    def global_scores(self, info, ego: str,
+                      where: Optional[NodeScoreWhereInput] = UNSET,
+                      limit: Optional[int] = UNSET,
+                      use_cache: Optional[int] = UNSET,
+                      hide_personal: Optional[bool] = UNSET,
                       ) -> list[NodeScore]:
         result = []
         for node, score in info.context.mr.get_top_beacons_global(limit=limit or None).items():
             if where is not UNSET and not where.match(node, score):
                 continue
-            result.append(NodeScore(node=node, ego="", score=score))
+            if hide_personal:
+                if node.startswith("C") or node.startswith("B"):
+                    if info.context.mr.get_edge(node, ego):
+                        continue
+            result.append(NodeScore(node=node, ego=ego, score=score))
         return result
 
 
