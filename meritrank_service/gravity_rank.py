@@ -1,5 +1,3 @@
-import itertools
-
 from meritrank_python.lazy import LazyMeritRank
 
 from meritrank_service.gql_types import Edge
@@ -47,6 +45,10 @@ class GravityRank(LazyMeritRank):
                 continue
 
             if edge.dest.startswith("C"):
+                if i == len(edges) - 1:
+                    # Always remove the last comment edge if it is non-transitive
+                    comments.pop(edge.dest, None)
+                    continue
                 if i < len(edges):
                     if edge.dest != edges[i + 1].src:
                         # if the edge is unpaired, skip it
@@ -62,10 +64,6 @@ class GravityRank(LazyMeritRank):
                             continue
                         else:
                             transitive_pairs.add(pair)
-                if i == len(edges) - 1:
-                    # Always remove the last comment edge if it is non-transitive
-                    comments.pop(edge.dest, None)
-                    continue
             filtered_edges.append(edge)
         return filtered_edges, users, beacons, comments
 
