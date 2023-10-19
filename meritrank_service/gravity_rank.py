@@ -1,3 +1,5 @@
+from datetime import time
+
 from meritrank_python.lazy import LazyMeritRank
 from meritrank_python.rank import NodeId
 
@@ -13,9 +15,10 @@ class GravityRank(LazyMeritRank):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.top_beacons_cache = {}
+        self.__top_beacons_cache = {}
 
-    def get_top_beacons_global(self, limit=None) -> dict[NodeId, float]:
+    def get_top_beacons_global(self, limit=None, use_cache=True) -> dict[NodeId, float]:
+        # TODO: cache usage
         reduced_graph = nx.DiGraph()
         for ego in self._IncrementalMeritRank__graph.nodes():
             if not ego.startswith("U"):
@@ -29,8 +32,8 @@ class GravityRank(LazyMeritRank):
         pr = nx.pagerank(reduced_graph)
         sorted_ranks = sorted(((k, v) for k, v in pr.items() if k.startswith('B')), key=lambda x: x[1], reverse=True)[
                        :limit]
-        self.top_beacons_cache = dict(sorted_ranks)
-        return self.top_beacons_cache
+        self.__top_beacons_cache = dict(sorted_ranks)
+        return self.__top_beacons_cache
 
     def get_edges_for_node(self, node):
         return [Edge(src=e[0], dest=e[1], weight=e[2]) for e in self.get_node_edges(node)]

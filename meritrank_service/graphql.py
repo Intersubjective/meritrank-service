@@ -139,14 +139,16 @@ class Query:
 
     @strawberry.field
     @handle_exceptions
-    def global_scores(self, info, ego:str,
+    def global_scores(self, info,
                where: Optional[NodeScoreWhereInput] = UNSET,
-               limit: Optional[int] = UNSET) -> list[NodeScore]:
+               limit: Optional[int] = UNSET,
+               use_cache: Optional[int] = UNSET
+                      ) -> list[NodeScore]:
         result = []
         for node, score in info.context.mr.get_top_beacons_global(limit=limit or None).items():
             if where is not UNSET and not where.match(node, score):
                 continue
-            result.append(NodeScore(node=node, ego=ego, score=score))
+            result.append(NodeScore(node=node, ego="", score=score))
         return result
 
 
