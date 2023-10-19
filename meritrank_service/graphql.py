@@ -110,6 +110,7 @@ class Query:
         return result
 
     @strawberry.field
+    @handle_exceptions
     def gravity_graph(self, info, ego: str,
                       focus: Optional[str] = UNSET,
                       min_abs_score: Optional[float] = UNSET,
@@ -135,6 +136,18 @@ class Query:
             beacons=ego_score_dict_to_list(ego, beacons),
             comments=ego_score_dict_to_list(ego, comments)
         )
+
+    @strawberry.field
+    @handle_exceptions
+    def global_scores(self, info, ego:str,
+               where: Optional[NodeScoreWhereInput] = UNSET,
+               limit: Optional[int] = UNSET) -> list[NodeScore]:
+        result = []
+        for node, score in info.context.mr.get_top_beacons_global(limit=limit or None).items():
+            if where is not UNSET and not where.match(node, score):
+                continue
+            result.append(NodeScore(node=node, ego=ego, score=score))
+        return result
 
 
 @strawberry.type
