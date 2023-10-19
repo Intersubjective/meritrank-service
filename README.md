@@ -35,24 +35,17 @@ To use it, you first have to add some `NOTIFY` triggers to Postgres:
      <summary> Example SQL trigger for notification </summary>
 
 ```SQL
-CREATE OR REPLACE FUNCTION notify_trigger() RETURNS trigger AS $$
-DECLARE
-    json_message text;
+
+CREATE OR REPLACE FUNCTION notify_edge_change() RETURNS trigger AS $$
 BEGIN
-    -- Serialize the tuple into a JSON string
-    json_message := row_to_json(row(NEW.src, NEW.dest, NEW.weight))::text;
-    
-    -- Notify the channel with the JSON string
-    PERFORM pg_notify('edges', json_message);
-    
-    -- Return the new row to indicate a successful operation
+    PERFORM pg_notify('edges', json_build_object('src', NEW.subject, 'dest', NEW.object, 'weight', NEW.amount)::text);
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER my_trigger
 AFTER INSERT OR UPDATE ON my_table
-FOR EACH ROW EXECUTE FUNCTION notify_trigger();
+FOR EACH ROW EXECUTE FUNCTION notify_edge_change();
 ```
 
  </details>
