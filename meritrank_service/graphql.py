@@ -9,6 +9,7 @@ from strawberry import UNSET
 from strawberry.fastapi import GraphQLRouter, BaseContext
 from strawberry.types import Info
 
+from meritrank_service.error_qgl_schema import ErrorEnabledSchema
 from meritrank_service.gql_types import Edge, NodeScore, GravityGraph
 from meritrank_service.gravity_rank import GravityRank
 from meritrank_service.log import LOGGER
@@ -148,7 +149,7 @@ class CustomContext(BaseContext):
         self.mr: IncrementalMeritRank = rank
 
 
-schema = strawberry.Schema(Query, Mutation)
+schema = ErrorEnabledSchema(Query, Mutation)
 
 
 def get_graphql_app(rank: GravityRank):
