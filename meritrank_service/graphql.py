@@ -112,10 +112,10 @@ class Query:
         for node, score in info.context.mr.get_ranks(ego, limit=limit or None).items():
             if where is not UNSET and not where.match(node, score):
                 continue
-            if hide_personal:
-                if node.startswith("C") or node.startswith("B"):
-                    if info.context.mr.get_edge(node, ego):
-                        continue
+            if (hide_personal
+                    and (node.startswith("C") or node.startswith("B"))
+                    and info.context.mr.get_edge(node, ego)):
+                continue
 
             result.append(NodeScore(node=node, ego=ego, score=score))
         return result
@@ -133,14 +133,11 @@ class Query:
         The graph is specific to usage in the Gravity/A2 social network.
         """
         LOGGER.info("Getting gravity graph (%s, include_negative=%s)", ego, "True" if positive_only else "False")
-        try:
-            edges, users, beacons, comments = info.context.mr.gravity_graph_filtered(
-                ego, [focus or ego],
-                min_abs_score or None,
-                positive_only or None,
-                recurse_depth or 2)
-        except NodeDoesNotExist:
-            return None
+        edges, users, beacons, comments = info.context.mr.gravity_graph_filtered(
+            ego, [focus or ego],
+            min_abs_score or None,
+            positive_only or None,
+            recurse_depth or 2)
         return GravityGraph(
             edges=edges,
             users=ego_score_dict_to_list(ego, users),
@@ -153,17 +150,20 @@ class Query:
     def global_scores(self, info, ego: str,
                       where: Optional[NodeScoreWhereInput] = UNSET,
                       limit: Optional[int] = UNSET,
-                      use_cache: Optional[int] = UNSET,
+                      use_cache: Optional[bool] = UNSET,
                       hide_personal: Optional[bool] = UNSET,
                       ) -> Optional[list[NodeScore]]:
+        LOGGER.info("Getting global scores (ego=%s, limit=%s, where=%s, hide_personal=%s, use_cache=%s )",
+                    ego, limit, where, hide_personal, use_cache)
         result = []
-        for node, score in info.context.mr.get_top_beacons_global(limit=limit or None).items():
+        for node, score in info.context.mr.get_top_beacons_global(limit=limit or None,
+                                                                  use_cache=use_cache or None).items():
             if where is not UNSET and not where.match(node, score):
                 continue
-            if hide_personal:
-                if node.startswith("C") or node.startswith("B"):
-                    if info.context.mr.get_edge(node, ego):
-                        continue
+            if (hide_personal
+                    and (node.startswith("B") or node.startswith("C"))
+                    and info.context.mr.get_edge(node, ego)):
+                continue
             result.append(NodeScore(node=node, ego=ego, score=score))
         return result
 

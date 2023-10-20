@@ -1,10 +1,11 @@
-from datetime import time
-
+from cachetools import TTLCache, cached
 from meritrank_python.lazy import LazyMeritRank
 from meritrank_python.rank import NodeId
 
 from meritrank_service.gql_types import Edge
 import networkx as nx
+
+top_beacons_cache = TTLCache(maxsize=1, ttl=3600)
 
 
 def filter_dict_by_set(d, s):
@@ -13,12 +14,8 @@ def filter_dict_by_set(d, s):
 
 class GravityRank(LazyMeritRank):
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.__top_beacons_cache = {}
-
-    def get_top_beacons_global(self, limit=None, use_cache=True) -> dict[NodeId, float]:
-        # TODO: cache usage
+    @cached(top_beacons_cache)
+    def __get_top_beacons_global(self):
         reduced_graph = nx.DiGraph()
         for ego in self._IncrementalMeritRank__graph.nodes():
             if not ego.startswith("U"):
@@ -29,11 +26,16 @@ class GravityRank(LazyMeritRank):
                         and (ego != dest)):
                     reduced_graph.add_edge(ego, dest, weight=score)
 
-        pr = nx.pagerank(reduced_graph)
-        sorted_ranks = sorted(((k, v) for k, v in pr.items() if k.startswith('B')), key=lambda x: x[1], reverse=True)[
-                       :limit]
-        self.__top_beacons_cache = dict(sorted_ranks)
-        return self.__top_beacons_cache
+        top_nodes = nx.pagerank(reduced_graph)
+        sorted_ranks = sorted(((k, v) for k, v in top_nodes.items() if k.startswith('B')), key=lambda x: x[1],
+                              reverse=True)
+        return sorted_ranks
+
+    def get_top_beacons_global(self, limit=None, use_cache=True) -> dict[NodeId, float]:
+        if not use_cache:
+            top_beacons_cache.clear()
+
+        return dict(self.__get_top_beacons_global()[:limit])
 
     def get_edges_for_node(self, node):
         return [Edge(src=e[0], dest=e[1], weight=e[2]) for e in self.get_node_edges(node)]
