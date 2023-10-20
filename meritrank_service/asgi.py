@@ -10,19 +10,20 @@ from meritrank_service.gravity_rank import GravityRank
 from meritrank_service.log import LOGGER
 from meritrank_service.postgres_edges_updater import create_notification_listener
 from meritrank_service.rest import MeritRankRestRoutes
+from meritrank_service.settings import MeritRankSettings
 
 
 def create_meritrank_app():
     edges_data = None
-    if debug_level := getenv("MERITRANK_DEBUG_LEVEL"):
-        LOGGER.setLevel(debug_level.upper())
-    postgres_edges_channel = getenv("POSTGRES_EDGES_CHANNEL")
+    settings = MeritRankSettings()
+    LOGGER.setLevel(settings.log_level)
 
-    if postgres_url := getenv("POSTGRES_DB_URL"):
+    if settings.pg_dsn:
         from meritrank_service.postgres_edges_provider import get_edges_data
         LOGGER.info("Got POSTGRES_DB_URL env variable, connecting DB to get initial data ")
-        edges_data = get_edges_data(postgres_url)
+        edges_data = get_edges_data(settings.pg_dsn)
         LOGGER.info("Loaded edges from DB")
+
     LOGGER.info("Creating meritrank instance")
     rank_instance = GravityRank(graph=edges_data, logger=LOGGER.getChild("meritrank"))
     user_routes = MeritRankRestRoutes(rank_instance)
@@ -35,10 +36,12 @@ def create_meritrank_app():
 
     @app.on_event("startup")
     async def startup_event():
-        if postgres_url and postgres_edges_channel:
+        if settings.pg_edges_channel:
             LOGGER.info("Starting LISTEN to Postgres")
             app.state.edges_updater_task = asyncio.create_task(
-                create_notification_listener(postgres_url, postgres_edges_channel, rank_instance.add_edge))
+                create_notification_listener(settings.pg_dsn, settings.pg_edges_channel, rank_instance.add_edge))
+        if settings.ego_warmup:
+            LOGGER.info("Scheduling ego warmup")
 
     @app.on_event("shutdown")
     async def shutdown_event():
