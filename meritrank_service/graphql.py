@@ -102,12 +102,11 @@ class Query:
         return NodeScore(node=node, ego=ego, score=score)
 
     @strawberry.field
-    @handle_exceptions
     def scores(self, info, ego: str,
                where: Optional[NodeScoreWhereInput] = UNSET,
                limit: Optional[int] = UNSET,
                hide_personal: Optional[bool] = UNSET
-               ) -> Optional[list[NodeScore]]:
+               ) -> list[NodeScore]:
         result = []
         for node, score in info.context.mr.get_ranks(ego, limit=limit or None).items():
             if where is not UNSET and not where.match(node, score):
