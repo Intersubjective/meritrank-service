@@ -120,13 +120,12 @@ class Query:
         return result
 
     @strawberry.field
-    @handle_exceptions
     def gravity_graph(self, info, ego: str,
                       focus: Optional[str] = UNSET,
                       min_abs_score: Optional[float] = UNSET,
                       positive_only: Optional[bool] = UNSET,
                       recurse_depth: Optional[int] = UNSET,
-                      ) -> Optional[GravityGraph]:
+                      ) -> GravityGraph:
         """
         This handle returns a graph of user's connections to other users.
         The graph is specific to usage in the Gravity/A2 social network.
@@ -145,13 +144,12 @@ class Query:
         )
 
     @strawberry.field
-    @handle_exceptions
     def global_scores(self, info, ego: str,
                       where: Optional[NodeScoreWhereInput] = UNSET,
                       limit: Optional[int] = UNSET,
                       use_cache: Optional[bool] = UNSET,
                       hide_personal: Optional[bool] = UNSET,
-                      ) -> Optional[list[NodeScore]]:
+                      ) -> list[NodeScore]:
         LOGGER.info("Getting global scores (ego=%s, limit=%s, where=%s, hide_personal=%s, use_cache=%s )",
                     ego, limit, where, hide_personal, use_cache)
         result = []
