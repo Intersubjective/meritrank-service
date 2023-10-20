@@ -27,6 +27,14 @@ Example:
 env POSTGRES_DB_URL="postgres://postgres:12345678@localhost:54321/postgres" uvicorn meritrank_service.asgi:create_meritrank_app --reload --factory
 
 ```
+#### Ego warmup (Gravity-specific)
+To enable warmup of ego calculation for every "user" node in the DB, set
+environment variable `EGO_WARMUP="True"`. The warmup is performed
+asynchronously at startup, and only if `POSTGRES_DB_URL` was properly
+set. During the warmup the service is going to be much less responsive
+than usual.
+
+
 
 ### Subscribing to updates from Postgres
 Meritrank-service can subscribe to receive edges data from Postgres in real-time by using Postgres `NOTIFY-LISTEN` mechanism.

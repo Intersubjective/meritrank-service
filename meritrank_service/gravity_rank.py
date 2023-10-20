@@ -1,3 +1,5 @@
+import asyncio
+
 from cachetools import TTLCache, cached
 from meritrank_python.lazy import LazyMeritRank
 from meritrank_python.rank import NodeId
@@ -148,3 +150,13 @@ class GravityRank(LazyMeritRank):
             comments.update(c)
 
         return edges, users, beacons, comments
+
+    async def warmup(self):
+        self.logger.info(f"Starting ego warmup")
+        all_egos = [ego for ego in self._IncrementalMeritRank__graph.nodes() if ego.startswith("U")]
+        for ego in all_egos:
+            self.calculate(ego)
+            # Just pass the control to the reactor for a brief moment
+            await asyncio.sleep(0)
+        self.logger.info(f"Starting warmup for global beacons score")
+        self.__get_top_beacons_global()

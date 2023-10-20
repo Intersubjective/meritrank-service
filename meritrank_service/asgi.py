@@ -1,5 +1,4 @@
 import asyncio
-from os import getenv
 
 from fastapi import FastAPI
 
@@ -42,13 +41,17 @@ def create_meritrank_app():
                 create_notification_listener(settings.pg_dsn, settings.pg_edges_channel, rank_instance.add_edge))
         if settings.ego_warmup:
             LOGGER.info("Scheduling ego warmup")
+            app.state.ego_warmup_task = asyncio.create_task(rank_instance.warmup())
 
     @app.on_event("shutdown")
     async def shutdown_event():
-        if app.state.edges_updater_task is None:
-            return
-        LOGGER.info("Stopping LISTEN to Postgres")
-        app.state.edges_updater_task.cancel()
-        await app.state.edges_updater_task
+        if app.state.ego_warmup_task and app.state.ego_warmup_task.running():
+            LOGGER.info("Warmup task still running, cancelling")
+            app.state.ego_warmup_task.cancel()
+            await app.state.ego_warmup_task
+        if app.state.edges_updater_task:
+            LOGGER.info("Stopping LISTEN to Postgres")
+            app.state.edges_updater_task.cancel()
+            await app.state.edges_updater_task
 
     return app
