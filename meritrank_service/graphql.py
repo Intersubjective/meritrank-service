@@ -18,14 +18,18 @@ from meritrank_service.log import LOGGER
 def handle_exceptions(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
+        args_str = ', '.join(str(arg) for arg in args)
+        kwargs_str = ', '.join(f'{k}={str(v)}' for k, v in kwargs.items() if k != "info")
         try:
             return func(*args, **kwargs)
-        except NodeDoesNotExist:
-            raise ValueError("Tried to get score from the standpoint of non-existing node", args[1])
+        except NodeDoesNotExist as e:
+            LOGGER.warning('GQL query "%s" exception: node %s does not exist. args %s, kwargs %s', func.__name__,
+                           e.node, args_str, kwargs_str)
+            return None
         except EgoNotInitialized:
-            raise ValueError("Tried to get score from node that was not initialized as ego before", args[1])
+            raise ValueError("Tried to get score from node that was not initialized as ego before")
         except EgoCounterEmpty:
-            raise ValueError("Score counter empty for ego. (e.g. initialized with zero walks)", args[1])
+            raise ValueError("Score counter empty for ego. (e.g. initialized with zero walks)")
 
     return wrapper
 
@@ -93,7 +97,7 @@ class Query:
 
     @strawberry.field
     @handle_exceptions
-    def score(self, info, ego: str, node: str) -> NodeScore:
+    def score(self, info, ego: str, node: str) -> Optional[NodeScore]:
         score = info.context.mr.get_node_score(ego, node)
         return NodeScore(node=node, ego=ego, score=score)
 
@@ -151,7 +155,7 @@ class Query:
                       limit: Optional[int] = UNSET,
                       use_cache: Optional[int] = UNSET,
                       hide_personal: Optional[bool] = UNSET,
-                      ) -> list[NodeScore]:
+                      ) -> Optional[list[NodeScore]]:
         result = []
         for node, score in info.context.mr.get_top_beacons_global(limit=limit or None).items():
             if where is not UNSET and not where.match(node, score):
