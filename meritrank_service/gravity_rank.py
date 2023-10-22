@@ -59,43 +59,49 @@ class GravityRank(LazyMeritRank):
         return users, beacons, comments
 
     def gravity_graph_filtered(self, *args, **kwargs):
-        # Filter out leaf comments
-        # Here we use the fact that transitive edges in the algorithm are always
-        # one after the other, e.g.  [(U->C), (C->U)]
+        # This function filters leaf comments from the gravity graph.
+        # The key assumption is that transitive edges in the algorithm are always consecutive, e.g.  [(U->C), (C->U)]
 
         edges, users, beacons, comments = self.gravity_graph(*args, **kwargs)
 
+        # Initialize required variables
         transitive_pairs = set()
-
-        filtered_edges = []
+        result_edges = []
         skip_next = False
+        comments_to_keep = set()
+
+        # Iterate over the edges
         for i, edge in enumerate(edges):
+
+            # If the skip_next flag is set, skip this iteration and reset the flag
             if skip_next:
                 skip_next = False
                 continue
 
-            if edge.dest.startswith("C"):
-                if i == len(edges) - 1:
-                    # Always remove the last comment edge if it is non-transitive
-                    comments.pop(edge.dest, None)
+            # Check if the edge is directed towards a comment, and if it forms a transitive pair
+            is_comment_edge = edge.dest.startswith("C")
+            if is_comment_edge:
+                is_transitive_pair = i < len(edges) - 1 and edge.dest == edges[i + 1].src
+                # If the edge is the last one and not part of a transitive pair, or doesn't form a transitive pair, skip it
+                if (i == len(edges) - 1) or not is_transitive_pair:
                     continue
-                if i < len(edges):
-                    if edge.dest != edges[i + 1].src:
-                        # if the edge is unpaired, skip it
-                        comments.pop(edge.dest, None)
-                        continue
-                    else:
-                        # Filter out duplicate transitive paths through comments.
-                        # E.g. (U1->Cfoo),(Cfoo->U2),(U1->Cbar),(Cbar->U2)
-                        if (pair := (edge.src, edges[i + 1].dest)) in transitive_pairs:
-                            comments.pop(edge.dest, None)
-                            # We should remember to remove the second (C->U) edge
-                            skip_next = True
-                            continue
-                        else:
-                            transitive_pairs.add(pair)
-            filtered_edges.append(edge)
-        return filtered_edges, users, beacons, comments
+
+                # If this transitive pair has already been encountered, skip it and the next edge
+                if is_transitive_pair and (pair := (edge.src, edges[i + 1].dest)) in transitive_pairs:
+                    skip_next = True
+                    continue
+                    
+                elif is_transitive_pair:
+                    transitive_pairs.add(pair)
+                    comments_to_keep.add(edge.dest)
+
+            # If an edge passes all the checks, add it to the result_edges list
+            result_edges.append(edge)
+
+        # Filter the comments dictionary to only include those in the comments_to_keep set
+        comments = {key: comments[key] for key in comments_to_keep & comments.keys()}
+
+        return result_edges, users, beacons, comments
 
     def gravity_graph(self, ego: str, focus_stack: list[str],
                       min_abs_score: float = None,
@@ -134,7 +140,6 @@ class GravityRank(LazyMeritRank):
                     (positive_only and dest_score <= 0.0) or
                     (edge.dest == ego) or
                     (len(focus_stack) >= 2 and edge.dest == focus_stack[-2])  # do not explore back edges
-
             ):
                 continue
 
