@@ -156,7 +156,9 @@ class GravityRank(LazyMeritRank):
 
         return edges, users, beacons, comments
 
-    async def warmup(self):
+    async def warmup(self, wait_time=0):
+        # Maybe wait a bit for other services to start up
+        await asyncio.sleep(wait_time)
         self.logger.info(f"Starting ego warmup")
         all_egos = [ego for ego in self._IncrementalMeritRank__graph.nodes() if ego.startswith("U")]
         for ego in all_egos:

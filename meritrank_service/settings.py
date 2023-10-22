@@ -9,6 +9,7 @@ class MeritRankSettings(BaseSettings):
     log_level: Optional[str] = Field(env="MERITRANK_DEBUG_LEVEL")
     pg_edges_channel: Optional[str] = Field(env="POSTGRES_EDGES_CHANNEL")
     ego_warmup: bool = False
+    ego_warmup_wait: int = 0  # Time to wait before starting the warmup
 
     @validator('log_level')
     @classmethod
