@@ -134,7 +134,7 @@ class Query:
         edges, users, beacons, comments = info.context.mr.gravity_graph_filtered(
             ego, [focus or ego],
             min_abs_score or None,
-            positive_only or None,
+            positive_only if positive_only is not UNSET else True,
             recurse_depth or 2)
         return GravityGraph(
             edges=edges,

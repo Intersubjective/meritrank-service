@@ -90,7 +90,7 @@ class GravityRank(LazyMeritRank):
                 if is_transitive_pair and (pair := (edge.src, edges[i + 1].dest)) in transitive_pairs:
                     skip_next = True
                     continue
-                    
+
                 elif is_transitive_pair:
                     transitive_pairs.add(pair)
                     comments_to_keep.add(edge.dest)
