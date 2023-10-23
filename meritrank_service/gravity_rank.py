@@ -10,6 +10,13 @@ import networkx as nx
 top_beacons_cache = TTLCache(maxsize=1, ttl=3600)
 
 
+def weight_fun(u, v, edge):
+    w = edge['weight']
+    if w > 0:
+        return 1.0 / w
+    return 10 ^ 20
+
+
 def filter_dict_by_set(d, s):
     return {k: v for k, v in d.items() if k in s}
 
@@ -58,6 +65,20 @@ class GravityRank(LazyMeritRank):
                 self.logger.warning(f"Unknown node type: {node}")
         return users, beacons, comments
 
+    def get_path(self, ego, focus):
+        path = nx.dijkstra_path(self._IncrementalMeritRank__graph, ego, focus, weight=weight_fun)
+        print (path)
+        edges = [Edge(src=src, dest=dest, weight=self.get_edge(src, dest)) for src, dest in nx.utils.pairwise(path)]
+        print (edges)
+
+        users, beacons, comments = {}, {}, {}
+        for node in path:
+            u, b, c = self.filter_node_by_type(ego, node)
+            users.update(u)
+            beacons.update(b)
+            comments.update(c)
+        return edges, users, beacons, comments
+
     def gravity_graph_filtered(self, *args, **kwargs):
         # This function filters leaf comments from the gravity graph.
         # The key assumption is that transitive edges in the algorithm are always consecutive, e.g.  [(U->C), (C->U)]
@@ -101,6 +122,12 @@ class GravityRank(LazyMeritRank):
         # Filter the comments dictionary to only include those in the comments_to_keep set
         comments = {key: comments[key] for key in comments_to_keep & comments.keys()}
 
+        e, u, b, c = self.get_path(args[0], args[1][-1])
+        result_edges.extend(e)
+        users.update(u)
+        beacons.update(b)
+        comments.update(c)
+        
         return result_edges, users, beacons, comments
 
     def gravity_graph(self, ego: str, focus_stack: list[str],
@@ -126,7 +153,6 @@ class GravityRank(LazyMeritRank):
         :param max_recurse_depth: how deep to recurse into the graph
         :return: (List[Edge], List[NodeScore])
         """
-
         edges = []
         users, beacons, comments = self.filter_node_by_type(ego, focus_stack[-1])
 
