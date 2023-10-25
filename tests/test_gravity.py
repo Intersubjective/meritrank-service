@@ -49,9 +49,10 @@ def simple_gravity_graph():
 def test_gravity_graph(simple_gravity_graph):
     # Just a smoke test
     g = GravityRank(graph=simple_gravity_graph)
-    result = g.gravity_graph_filtered("U1", ["U1"])
+    result = g.gravity_graph("U1", "U1")
     combined_result = {(e.src + e.dest): e.weight for e in result[0]}
     assert "U1" + "CU000" not in combined_result
+    print (result)
 
 
 def test_global_ranks(simple_gravity_graph):

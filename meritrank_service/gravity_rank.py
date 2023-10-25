@@ -46,141 +46,56 @@ class GravityRank(LazyMeritRank):
 
         return dict(self.__get_top_beacons_global()[:limit])
 
-    def get_edges_for_node(self, node):
-        return [Edge(src=e[0], dest=e[1], weight=e[2]) for e in self.get_node_edges(node)]
+    def add_path_to_graph(self, G, ego, focus):
+        ego_to_focus_path = nx.dijkstra_path(self._IncrementalMeritRank__graph, ego, focus, weight=weight_fun)
+        path_edges = [(src, dest, self.get_edge(src, dest)) for src, dest in nx.utils.pairwise(ego_to_focus_path)]
+        G.add_weighted_edges_from(path_edges)
 
-    def filter_node_by_type(self, ego, node):
-        users = {}
-        beacons = {}
-        comments = {}
-        score = self.get_node_score(ego, node)
-        match node[0]:
-            case 'U':
-                users[node] = score
-            case 'C':
-                comments[node] = score
-            case 'B':
-                beacons[node] = score
-            case _:
-                self.logger.warning(f"Unknown node type: {node}")
-        return users, beacons, comments
+    def remove_non_positive(self, ego, G):
+        for node in list(G.nodes()):
+            if self.get_node_score(ego, node) <= 0:
+                G.remove_node(node)
 
-    def get_path(self, ego, focus):
-        path = nx.dijkstra_path(self._IncrementalMeritRank__graph, ego, focus, weight=weight_fun)
-        print (path)
-        edges = [Edge(src=src, dest=dest, weight=self.get_edge(src, dest)) for src, dest in nx.utils.pairwise(path)]
-        print (edges)
+    def remove_terminal_comments(self, G):
+        for src, dest in list(G.edges()):
+            if dest.startswith("C") and G.out_degree(dest) == 0:
+                G.remove_node(dest)
 
-        users, beacons, comments = {}, {}, {}
-        for node in path:
-            u, b, c = self.filter_node_by_type(ego, node)
-            users.update(u)
-            beacons.update(b)
-            comments.update(c)
-        return edges, users, beacons, comments
+    def remove_terminal_beacons(self, G):
+        for src, dest in list(G.edges()):
+            if dest.startswith("B") and G.out_degree(dest) == 0:
+                G.remove_node(dest)
 
-    def gravity_graph_filtered(self, *args, **kwargs):
-        # This function filters leaf comments from the gravity graph.
-        # The key assumption is that transitive edges in the algorithm are always consecutive, e.g.  [(U->C), (C->U)]
+    def remove_duplicate_transitive_comments(self, G):
+        for node in list(G.nodes()):
+            if node.startswith("U"):
+                node_already_connected = False
+                for src, dest in list(G.in_edges(node)):
+                    if src.startswith("C"):
+                        if node_already_connected:
+                            G.remove_node(src)
+                        else:
+                            node_already_connected = True
 
-        edges, users, beacons, comments = self.gravity_graph(*args, **kwargs)
+    def gravity_graph(self, ego: str, focus: str,
+                      positive_only: bool = True) -> tuple[list[Edge], dict[str, float]]:
+        G = nx.ego_graph(self._IncrementalMeritRank__graph, focus, radius=2)
 
-        # Initialize required variables
-        transitive_pairs = set()
-        result_edges = []
-        skip_next = False
-        comments_to_keep = set()
+        if positive_only:
+            self.remove_non_positive(ego, G)
+        self.remove_terminal_comments(G)
+        self.remove_terminal_beacons(G)
+        self.remove_duplicate_transitive_comments(G)
+        try:
+            self.add_path_to_graph(G, ego, focus)
+        except nx.exception.NetworkXNoPath:
+            # No path found, so add just the focus node to show at least something
+            G.add_node(focus)
 
-        # Iterate over the edges
-        for i, edge in enumerate(edges):
+        nodes_dict = {n: self.get_node_score(ego, n) for n in G.nodes()}
+        edges = [Edge(src=src, dest=dest, weight=self.get_edge(src, dest)) for src, dest in G.edges()]
 
-            # If the skip_next flag is set, skip this iteration and reset the flag
-            if skip_next:
-                skip_next = False
-                continue
-
-            # Check if the edge is directed towards a comment, and if it forms a transitive pair
-            is_comment_edge = edge.dest.startswith("C")
-            if is_comment_edge:
-                is_transitive_pair = i < len(edges) - 1 and edge.dest == edges[i + 1].src
-                # If the edge is the last one and not part of a transitive pair, or doesn't form a transitive pair, skip it
-                if (i == len(edges) - 1) or not is_transitive_pair:
-                    continue
-
-                # If this transitive pair has already been encountered, skip it and the next edge
-                if is_transitive_pair and (pair := (edge.src, edges[i + 1].dest)) in transitive_pairs:
-                    skip_next = True
-                    continue
-
-                elif is_transitive_pair:
-                    transitive_pairs.add(pair)
-                    comments_to_keep.add(edge.dest)
-
-            # If an edge passes all the checks, add it to the result_edges list
-            result_edges.append(edge)
-
-        # Filter the comments dictionary to only include those in the comments_to_keep set
-        comments = {key: comments[key] for key in comments_to_keep & comments.keys()}
-
-        e, u, b, c = self.get_path(args[0], args[1][-1])
-        result_edges.extend(e)
-        users.update(u)
-        beacons.update(b)
-        comments.update(c)
-        
-        return result_edges, users, beacons, comments
-
-    def gravity_graph(self, ego: str, focus_stack: list[str],
-                      min_abs_score: float = None,
-                      positive_only: bool = True,
-                      max_recurse_depth: int = 2):
-        """
-        In Gravity social network, prefixes in the node names determine the type of the node.
-        The prefixes are:
-        "U" - user
-        "B" - beacon
-        "C" - comment
-        The basic idea is to only include the following categories of the nodes in the graph:
-        users,
-        beacons,
-        comment that lead to some other user.
-        Basically, this means "everything except terminal/leaf/dead-end comments"
-        The graph is returned as a list of edges, and a list of nodes.
-        :param ego: ego to get the graph for
-        :param focus_stack: stack of focus node to get the graph around. Start with e.g. [your_node]
-        :param positive_only: only include nodes with positive scores
-        :param min_abs_score: minimum absolute score of nodes to include in the graph
-        :param max_recurse_depth: how deep to recurse into the graph
-        :return: (List[Edge], List[NodeScore])
-        """
-        edges = []
-        users, beacons, comments = self.filter_node_by_type(ego, focus_stack[-1])
-
-        if len(focus_stack) > max_recurse_depth:
-            return edges, users, beacons, comments
-
-        for edge in self.get_edges_for_node(focus_stack[-1]):
-            dest_score = self.get_node_score(ego, edge.dest)
-            if (
-                    (min_abs_score is not None and dest_score < min_abs_score) or
-                    (positive_only and dest_score <= 0.0) or
-                    (edge.dest == ego) or
-                    (len(focus_stack) >= 2 and edge.dest == focus_stack[-2])  # do not explore back edges
-            ):
-                continue
-
-            e, u, b, c = self.gravity_graph(ego, focus_stack + [edge.dest],
-                                            min_abs_score=min_abs_score,
-                                            positive_only=positive_only,
-                                            max_recurse_depth=max_recurse_depth)
-            if u or b or c:
-                edges.append(edge)
-            edges.extend(e)
-            users.update(u)
-            beacons.update(b)
-            comments.update(c)
-
-        return edges, users, beacons, comments
+        return edges, nodes_dict
 
     async def warmup(self, wait_time=0):
         # Maybe wait a bit for other services to start up

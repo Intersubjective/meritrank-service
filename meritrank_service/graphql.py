@@ -9,7 +9,7 @@ from strawberry import UNSET
 from strawberry.fastapi import GraphQLRouter, BaseContext
 from strawberry.types import Info
 
-from meritrank_service.error_qgl_schema import ErrorEnabledSchema
+from meritrank_service.error_gql_schema import ErrorEnabledSchema
 from meritrank_service.gql_types import Edge, NodeScore, GravityGraph
 from meritrank_service.gravity_rank import GravityRank
 from meritrank_service.log import LOGGER
@@ -82,6 +82,19 @@ LOGGER = LOGGER.getChild("graphql")
 def ego_score_dict_to_list(ego, d):
     return [NodeScore(node=n, ego=ego, score=s) for n, s in d.items()]
 
+def demux_nodes(nodes_dict):
+    users, beacons, comments = {}, {}, {}
+    for node, score in nodes_dict.items():
+        match node[0]:
+            case "U":
+                users[node] = score
+            case "B":
+                beacons[node] = score
+            case "C":
+                comments[node] = score
+    return users, beacons, comments
+
+
 
 @strawberry.type
 class Query:
@@ -122,20 +135,17 @@ class Query:
     @strawberry.field
     def gravity_graph(self, info, ego: str,
                       focus: Optional[str] = UNSET,
-                      min_abs_score: Optional[float] = UNSET,
                       positive_only: Optional[bool] = UNSET,
-                      recurse_depth: Optional[int] = UNSET,
                       ) -> GravityGraph:
         """
         This handle returns a graph of user's connections to other users.
         The graph is specific to usage in the Gravity/A2 social network.
         """
         LOGGER.info("Getting gravity graph (%s, include_negative=%s)", ego, "True" if positive_only else "False")
-        edges, users, beacons, comments = info.context.mr.gravity_graph_filtered(
-            ego, [focus or ego],
-            min_abs_score or None,
-            positive_only if positive_only is not UNSET else True,
-            recurse_depth or 2)
+        edges, nodes_dict = info.context.mr.gravity_graph(
+            ego, focus or ego,
+            positive_only if positive_only is not UNSET else True)
+        users, beacons, comments = demux_nodes(nodes_dict)
         return GravityGraph(
             edges=edges,
             users=ego_score_dict_to_list(ego, users),
