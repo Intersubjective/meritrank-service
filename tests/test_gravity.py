@@ -60,3 +60,6 @@ def test_global_ranks(simple_gravity_graph):
     g = GravityRank(graph=simple_gravity_graph)
     result = g.get_top_beacons_global()
     print(result)
+
+def test_users_stats(simple_gravity_graph):
+    g = GravityRank(graph=simple_gravity_graph)
