@@ -21,6 +21,7 @@ def in_degree_single(G, node):
         else:
             return 0
 
+
 def weight_fun(u, v, edge):
     w = edge['weight']
     if w > 0:
@@ -85,13 +86,15 @@ class GravityRank(LazyMeritRank):
                     if G.has_node(dest):
                         G.remove_node(dest)
 
-    def get_users_stats(self, ego):
+    def get_users_stats(self, ego) -> dict[str, (float, float)]:
         all_ranks = self.get_ranks(ego)
         users_stats = {}
-        for node, score in all_ranks:
-            if node.startswith("U"):
-                users_stats[node] = score
+        for node, score in all_ranks.items():
+            if node.startswith("U") and score > 0.0:
+                # Get both forward (ego->node), and reverse (node->ego) scores
+                users_stats[node] = score, self.get_node_score(node, ego)
 
+        return users_stats
 
     def remove_duplicate_transitive_comments(self, G):
         # TODO: properly handle the case for comments from different users

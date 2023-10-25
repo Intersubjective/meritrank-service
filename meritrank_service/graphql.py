@@ -10,7 +10,7 @@ from strawberry.fastapi import GraphQLRouter, BaseContext
 from strawberry.types import Info
 
 from meritrank_service.error_gql_schema import ErrorEnabledSchema
-from meritrank_service.gql_types import Edge, NodeScore, GravityGraph
+from meritrank_service.gql_types import Edge, NodeScore, GravityGraph, MutualScore
 from meritrank_service.gravity_rank import GravityRank
 from meritrank_service.log import LOGGER
 
@@ -152,6 +152,13 @@ class Query:
             beacons=ego_score_dict_to_list(ego, beacons),
             comments=ego_score_dict_to_list(ego, comments)
         )
+
+    @strawberry.field
+    def users_stats(self, info, ego: str) -> list[MutualScore]:
+        LOGGER.info("Getting users stats for user %s", ego)
+        stats_dict  = info.context.mr.get_users_stats(ego)
+        return [MutualScore(ego=ego, node=k, node_score=v[0], ego_score=v[1]) for k,v in stats_dict.items()]
+
 
     @strawberry.field
     def global_scores(self, info, ego: str,

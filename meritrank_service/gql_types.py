@@ -16,6 +16,13 @@ class Edge:
     dest: str
     weight: float
 
+@strawberry.type
+class MutualScore:
+    ego: str
+    node: str
+    node_score: float
+    ego_score: float
+
 
 @strawberry.type
 class GravityGraph:
