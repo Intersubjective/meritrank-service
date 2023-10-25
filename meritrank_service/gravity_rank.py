@@ -10,9 +10,9 @@ import networkx as nx
 top_beacons_cache = TTLCache(maxsize=1, ttl=3600)
 
 
-def out_degree_single(G, node):
+def in_degree_single(G, node):
     # Due to a bug/deficincy of Networkx, it assumes str-identified nodes as interables
-    maybe_iter = G.out_degree(node)
+    maybe_iter = G.in_degree(node)
     if isinstance(maybe_iter, int):
         return maybe_iter
     else:
@@ -69,15 +69,21 @@ class GravityRank(LazyMeritRank):
 
     def remove_terminal_comments(self, G):
         for src, dest in list(G.edges()):
-            if dest.startswith("C") and out_degree_single(G, dest) <= 1:
-                if G.has_node(dest):
-                    G.remove_node(dest)
+            if src.startswith('U') and dest.startswith("C"):
+                in_degree = in_degree_single(G, dest)
+                if (in_degree == 0 or
+                        (in_degree == 1 and G.has_edge(dest, src))):
+                    if G.has_node(dest):
+                        G.remove_node(dest)
 
     def remove_terminal_beacons(self, G):
         for src, dest in list(G.edges()):
-            if dest.startswith("B") and out_degree_single(G, dest) <= 1:
-                if G.has_node(dest):
-                    G.remove_node(dest)
+            if src.startswith('U') and dest.startswith("B"):
+                in_degree = in_degree_single(G, dest)
+                if (in_degree == 0 or
+                        (in_degree == 1 and G.has_edge(dest, src))):
+                    if G.has_node(dest):
+                        G.remove_node(dest)
 
     def get_users_stats(self, ego):
         all_ranks = self.get_ranks(ego)
@@ -88,6 +94,7 @@ class GravityRank(LazyMeritRank):
 
 
     def remove_duplicate_transitive_comments(self, G):
+        # TODO: properly handle the case for comments from different users
         for node in list(G.nodes()):
             if node.startswith("U"):
                 node_already_connected = False
