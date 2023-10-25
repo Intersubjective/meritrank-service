@@ -58,12 +58,12 @@ class GravityRank(LazyMeritRank):
 
     def remove_terminal_comments(self, G):
         for src, dest in list(G.edges()):
-            if dest.startswith("C") and G.out_degree(dest) == 0:
+            if dest.startswith("C") and G.out_degree(dest) <= 1:
                 G.remove_node(dest)
 
     def remove_terminal_beacons(self, G):
         for src, dest in list(G.edges()):
-            if dest.startswith("B") and G.out_degree(dest) == 0:
+            if dest.startswith("B") and G.out_degree(dest) <= 0:
                 G.remove_node(dest)
 
     def remove_duplicate_transitive_comments(self, G):
