@@ -129,7 +129,10 @@ class Query:
                     and info.context.mr.get_edge(node, ego)):
                 continue
 
-            result.append(NodeScore(node=node, ego=ego, score=score))
+            try:
+                result.append(NodeScore(node=node, ego=ego, score=score))
+            except NodeDoesNotExist:
+                self.logger.warning('GQL query "score" exception: node %s does not exist.', node)
         return result
 
     @strawberry.field
