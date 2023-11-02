@@ -24,21 +24,31 @@ def create_meritrank_app():
         LOGGER.info("Loaded edges from DB")
 
     LOGGER.info("Creating meritrank instance")
-    rank_instance = GravityRank(graph=edges_data, logger=LOGGER.getChild("meritrank"))
-    user_routes = MeritRankRestRoutes(rank_instance)
+    mr = GravityRank(graph=edges_data, logger=LOGGER.getChild("meritrank"))
+    user_routes = MeritRankRestRoutes(mr)
 
     LOGGER.info("Creating FastAPI instance")
     app = FastAPI(title="MeritRank", version=meritrank_service_version)
     app.include_router(user_routes.router)
-    app.include_router(get_graphql_app(rank_instance), prefix="/graphql")
+    app.include_router(get_graphql_app(mr), prefix="/graphql")
     LOGGER.info("Returning app instance")
 
     @app.on_event("startup")
     async def startup_event():
 
+        if settings.pg_fdw_listen_url:
+            LOGGER.info("Starting PyNNG listener for Postgres FDW")
+            app.state.fdw_listener_task = asyncio.create_task(
+                create_fdw_listener(mr, settings.pg_fdw_listen_url))
+
         if settings.pg_edges_channel:
             LOGGER.info("Starting LISTEN to Postgres")
             app.state.edges_updater_task = asyncio.create_task(
+                create_notification_listener(settings.pg_dsn, settings.pg_edges_channel, mr.add_edge))
+
+        if settings.ego_warmup:
+            LOGGER.info("Scheduling ego warmup")
+            app.state.ego_warmup_task = asyncio.create_task(mr.warmup(settings.ego_warmup_wait))
                 create_notification_listener(
                     settings.pg_dsn,
                     settings.pg_edges_channel,
@@ -65,9 +75,15 @@ def create_meritrank_app():
             LOGGER.info("Warmup task still running, cancelling")
             app.state.ego_warmup_task.cancel()
             await app.state.ego_warmup_task
+
         if app.state.edges_updater_task:
             LOGGER.info("Stopping LISTEN to Postgres")
             app.state.edges_updater_task.cancel()
             await app.state.edges_updater_task
+
+        if app.state.pg_fdw_listen_url:
+            LOGGER.info("Stopping PyNNG listener for Postgres FDW")
+            app.state.fdw_listener_task.cancel()
+            await app.state.fdw_listener_task
 
     return app

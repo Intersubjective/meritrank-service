@@ -3,7 +3,11 @@ from typing import Optional
 
 from pydantic import BaseSettings, PostgresDsn, Field, validator, root_validator
 
+class NNGUrl(AnyUrl):
+    allowed_schemes = {'inproc', 'ipc', 'tcp', 'ws', 'tls+tcp', 'wss'}
 
+
+    __slots__ = ()
 class MeritRankSettings(BaseSettings):
     pg_dsn: Optional[PostgresDsn] = Field(env="POSTGRES_DB_URL")
     log_level: Optional[str] = Field(env="MERITRANK_DEBUG_LEVEL")
@@ -13,6 +17,7 @@ class MeritRankSettings(BaseSettings):
     zero_node: Optional[str] = None
     zero_top_nodes_limit: int = 1000
     zero_heartbeat_period: int = 60*60  # Seconds to wait before refreshing zero's opinion on network
+    pg_fdw_listen_url: Optional[NNGUrl] = "tcp://127.0.0.1:10234"
 
     @validator('log_level')
     @classmethod
