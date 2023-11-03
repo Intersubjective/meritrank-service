@@ -27,12 +27,30 @@ Example:
 env POSTGRES_DB_URL="postgres://postgres:12345678@localhost:54321/postgres" uvicorn meritrank_service.asgi:create_meritrank_app --reload --factory
 
 ```
-#### Ego warmup (Gravity-specific)
+### Gravity-specific configuration
+
+#### Ego warmup
 To enable warmup of ego calculation for every "user" node in the DB, set
 environment variable `EGO_WARMUP="True"`. The warmup is performed
 asynchronously at startup, and only if `POSTGRES_DB_URL` was properly
 set. During the warmup the service is going to be much less responsive
 than usual.
+
+#### Zero node heartbeat
+It is possible to build a global ranking (not Sybil-toleran, obviously), 
+and create a "Zero node" that will point with its edges to the top N nodes. This can be used to
+create a "boostrap policy" or a "curated" list of recommendations.
+To enable zero heartbeat, set environment variable `ZERO_NODE` to the name of the node
+that should be used as the Zero. If set, this will schedule a periodic recalculation of the
+global ranking and reestablishment of the Zero node. By default, the recalculation period
+is 1 hour.
+
+The environment variables controlling the period of the recalculation and the limit of top nodes
+to add are `ZERO_HEART_PERIOD` (in seconds) and `ZERO_TOP_NODES_LIMIT` respectively (100 by default).
+
+Zero recalulation is scheduled to perform synchronously after the warmup (if enabled).
+If the warmup is disabled, Zero will be recalculated immediately after the service start.
+
 
 
 
