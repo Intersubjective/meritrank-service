@@ -89,17 +89,17 @@ class GravityRank(LazyMeritRank):
                       limit: int | None = None
                       ) -> tuple[list[Edge], dict[str, float]]:
         G = nx.DiGraph()
-        graph = self._IncrementalMeritRank__graph
-        for a, b in graph.out_edges(focus):
+        for a, b, _ in self.get_node_edges(focus):
             if positive_only and self.get_node_score(ego, b) <= 0:
                 continue
             if b.startswith("U"):
                 # For direct user->user add all of them
+                assert (self.get_edge(a, b) is not None)
                 G.add_edge(a, b, weight=self.get_edge(a, b))
             elif b.startswith("C") or b.startswith("B"):
                 # For connections user-> comment | beacon -> user,
                 # convolve those into user->user
-                for _, c in graph.out_edges(b):
+                for _, c, _ in self.get_node_edges(b):
                     if not (c.startswith("U") and c != a):
                         continue
                     w_ab = self.get_edge(a, b)
@@ -122,7 +122,7 @@ class GravityRank(LazyMeritRank):
         self.remove_self_edges(G)
 
         nodes_dict = {n: self.get_node_score(ego, n) for n in G.nodes()}
-        edges = [Edge(src=src, dest=dest, weight=self.get_edge(src, dest)) for src, dest in G.edges()]
+        edges = [Edge(src=src, dest=dest, weight=G.get_edge_data(src, dest)['weight']) for src, dest in G.edges()]
 
         return edges, nodes_dict
 
