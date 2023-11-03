@@ -39,14 +39,6 @@ python-versions = ">=3.8"
 asyncpg = ">=0.27.0"
 
 [[package]]
-name = "cachetools"
-version = "5.3.1"
-description = "Extensible memoizing collections and decorators"
-category = "main"
-optional = false
-python-versions = ">=3.7"
-
-[[package]]
 name = "certifi"
 version = "2023.7.22"
 description = "Python package for providing Mozilla's CA Bundle."
@@ -420,7 +412,7 @@ python-versions = ">=3.8"
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.11, <3.13"
-content-hash = "de86ce9b645555ec08223af51ed4d67f2f4e3adac8d66e98908487f247c8f91e"
+content-hash = "5a7b7d65dd59ded708b18e690af4550a8d8344908b5f1a8decff15e8f5655e36"
 
 [metadata.files]
 anyio = [
@@ -472,10 +464,6 @@ asyncpg = [
 asyncpg-listen = [
     {file = "asyncpg-listen-0.0.6.tar.gz", hash = "sha256:f3a889a3848903e4710705e785fd95940b3a5939a89a660827cdaaa113e1959e"},
     {file = "asyncpg_listen-0.0.6-py3-none-any.whl", hash = "sha256:9fe21be4399f4c511a3f9a9b064306b13183487524a02f14166b33afe17ba401"},
-]
-cachetools = [
-    {file = "cachetools-5.3.1-py3-none-any.whl", hash = "sha256:95ef631eeaea14ba2e36f06437f36463aac3a096799e876ee55e5cdccb102590"},
-    {file = "cachetools-5.3.1.tar.gz", hash = "sha256:dce83f2d9b4e1f732a8cd44af8e8fab2dbe46201467fc98b3ef8f269092bf62b"},
 ]
 certifi = [
     {file = "certifi-2023.7.22-py3-none-any.whl", hash = "sha256:92d6037539857d8206b8f6ae472e8b77db8058fec5937a1ef3f54304089edbb9"},

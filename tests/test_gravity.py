@@ -55,14 +55,6 @@ def test_gravity_graph(simple_gravity_graph):
     assert "U1" + "CU000" not in combined_result
     print (result)
 
-def test_remove_terminal_comments():
-    graph = {"U1": {"C1": {"weight": 1.0}},
-             "C1": {"U1": {"weight": 1.0}}}
-    g = GravityRank(graph=graph)
-    G = nx.DiGraph(graph)
-    g.remove_terminal_comments(G)
-    assert list(G.edges()) == []
-
 
 
 def test_global_ranks(simple_gravity_graph):

@@ -1,13 +1,10 @@
 import asyncio
 
-from cachetools import TTLCache, cached
 from meritrank_python.lazy import LazyMeritRank
 from meritrank_python.rank import NodeId
 
 from meritrank_service.gql_types import Edge
 import networkx as nx
-
-top_beacons_cache = TTLCache(maxsize=1, ttl=3600)
 
 
 def in_degree_single(G, node):
@@ -99,7 +96,7 @@ class GravityRank(LazyMeritRank):
             if b.startswith("U"):
                 # For direct user->user add all of them
                 G.add_edge(a, b, weight=self.get_edge(a, b))
-            elif b.startswith("C") or b.startswith("U"):
+            elif b.startswith("C") or b.startswith("B"):
                 # For connections user-> comment | beacon -> user,
                 # convolve those into user->user
                 for _, c in graph.out_edges(b):
