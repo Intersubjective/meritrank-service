@@ -1,7 +1,7 @@
 import logging
 from typing import Optional
 
-from pydantic import BaseSettings, PostgresDsn, Field, validator, root_validator
+from pydantic import AnyUrl, BaseSettings, PostgresDsn, Field, validator, root_validator
 
 class NNGUrl(AnyUrl):
     allowed_schemes = {'inproc', 'ipc', 'tcp', 'ws', 'tls+tcp', 'wss'}

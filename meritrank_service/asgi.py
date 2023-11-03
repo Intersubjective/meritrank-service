@@ -10,6 +10,7 @@ from meritrank_service.log import LOGGER
 from meritrank_service.postgres_edges_updater import create_notification_listener
 from meritrank_service.rest import MeritRankRestRoutes
 from meritrank_service.settings import MeritRankSettings
+from meritrank_service.fdw_parser import create_fdw_listener
 
 
 def create_meritrank_app():
@@ -44,16 +45,13 @@ def create_meritrank_app():
         if settings.pg_edges_channel:
             LOGGER.info("Starting LISTEN to Postgres")
             app.state.edges_updater_task = asyncio.create_task(
-                create_notification_listener(settings.pg_dsn, settings.pg_edges_channel, mr.add_edge))
-
-        if settings.ego_warmup:
-            LOGGER.info("Scheduling ego warmup")
-            app.state.ego_warmup_task = asyncio.create_task(mr.warmup(settings.ego_warmup_wait))
                 create_notification_listener(
                     settings.pg_dsn,
                     settings.pg_edges_channel,
-                    rank_instance.add_edge))
+                    mr.add_edge))
 
+        if settings.ego_warmup:
+            LOGGER.info("Scheduling ego warmup")
             async def warmup_into_zero():
                 if settings.zero_node:
                     LOGGER.info("Scheduling zero heartbeat to start after warmup")
@@ -67,7 +65,6 @@ def create_meritrank_app():
                         settings.zero_heartbeat_period)
 
             app.state.ego_warmup_task = asyncio.create_task(warmup_into_zero())
-
 
     @app.on_event("shutdown")
     async def shutdown_event():

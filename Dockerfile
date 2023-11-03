@@ -33,7 +33,7 @@ RUN poetry config virtualenvs.create false && poetry install --no-interaction --
 COPY . /app
 
 # Expose the application's port
-EXPOSE 8000
+EXPOSE 8000 10234
 
 # Run the application
 CMD ["uvicorn", "--factory", "meritrank_service.asgi:create_meritrank_app", "--host", "0.0.0.0", "--port", "8000"]

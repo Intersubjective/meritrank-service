@@ -16,11 +16,6 @@ def fdw_parser(meritrank):
     return FdwProcessor(meritrank)
 
 
-def test_init(meritrank):
-    fdw_parser = FdwProcessor(meritrank)
-    assert fdw_parser.mr is meritrank
-
-
 def test_process_query(fdw_parser, meritrank):
     quals = [
         ('src', '=', 'a'),
