@@ -43,6 +43,19 @@ class MeritRankRestRoutes(Routable):
         self.__rank.calculate(ego, num_walks=count)
         return {"message": f"Calculated {count} walks for {ego}"}
 
+    @put("/zero")
+    async def put_zero(self, zero_node: NodeId, top_nodes_limit: int = 100):
+        """
+        (Re)Intialize a "Zero" node with the given node id.
+        Putting this node will initiate calculating the global ranking
+        and then add outgoing edges from it to the *count* top nodes.
+
+        :param zero_node: the node id to initialize
+        :param top_nodes_limit: the number of top nodes to add
+        """
+        self.__rank.refresh_zero_opinion(zero_node, top_nodes_limit)
+        return {"message": f"Initiated zero {zero_node}"}
+
     @put("/loglevel")
     async def loglevel(self, loglevel: str):
         """

@@ -10,6 +10,9 @@ class MeritRankSettings(BaseSettings):
     pg_edges_channel: Optional[str] = Field(env="POSTGRES_EDGES_CHANNEL")
     ego_warmup: bool = False
     ego_warmup_wait: int = 0  # Time to wait before starting the warmup
+    zero_node: Optional[str] = None
+    zero_top_nodes_limit: int = 1000
+    zero_heartbeat_period: int = 60*60  # Seconds to wait before refreshing zero's opinion on network
 
     @validator('log_level')
     @classmethod

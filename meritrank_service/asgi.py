@@ -35,13 +35,29 @@ def create_meritrank_app():
 
     @app.on_event("startup")
     async def startup_event():
+
         if settings.pg_edges_channel:
             LOGGER.info("Starting LISTEN to Postgres")
             app.state.edges_updater_task = asyncio.create_task(
-                create_notification_listener(settings.pg_dsn, settings.pg_edges_channel, rank_instance.add_edge))
-        if settings.ego_warmup:
-            LOGGER.info("Scheduling ego warmup")
-            app.state.ego_warmup_task = asyncio.create_task(rank_instance.warmup(settings.ego_warmup_wait))
+                create_notification_listener(
+                    settings.pg_dsn,
+                    settings.pg_edges_channel,
+                    rank_instance.add_edge))
+
+            async def warmup_into_zero():
+                if settings.zero_node:
+                    LOGGER.info("Scheduling zero heartbeat to start after warmup")
+                if settings.ego_warmup:
+                    LOGGER.info("Scheduling ego warmup")
+                    await rank_instance.warmup(settings.ego_warmup_wait)
+                if settings.zero_node:
+                    await rank_instance.zero_opinion_heartbeat(
+                        settings.zero_node,
+                        settings.zero_top_nodes_limit,
+                        settings.zero_heartbeat_period)
+
+            app.state.ego_warmup_task = asyncio.create_task(warmup_into_zero())
+
 
     @app.on_event("shutdown")
     async def shutdown_event():

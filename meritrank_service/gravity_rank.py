@@ -35,8 +35,7 @@ def filter_dict_by_set(d, s):
 
 class GravityRank(LazyMeritRank):
 
-    @cached(top_beacons_cache)
-    def __get_top_beacons_global(self):
+    def get_top_beacons_global(self):
         reduced_graph = nx.DiGraph()
         for ego in self._IncrementalMeritRank__graph.nodes():
             if not ego.startswith("U"):
@@ -52,11 +51,14 @@ class GravityRank(LazyMeritRank):
                               reverse=True)
         return sorted_ranks
 
-    def get_top_beacons_global(self, limit=None, use_cache=True) -> dict[NodeId, float]:
-        if not use_cache:
-            top_beacons_cache.clear()
-
-        return dict(self.__get_top_beacons_global()[:limit])
+    def refresh_zero_opinion(self, zero_node, top_nodes_limit=100):
+        # Zero out existing edges of the zero node, to avoid affecting
+        # the global ranking calculation
+        for _ , dst, _ in self.get_node_edges(zero_node):
+            self.add_edge(zero_node, dst, 0.0)
+        top_nodes = self.get_top_beacons_global()
+        for dst, score in top_nodes[:top_nodes_limit]:
+            self.add_edge(zero_node, dst, score)
 
     def add_path_to_graph(self, G, ego, focus):
         ego_to_focus_path = nx.dijkstra_path(self._IncrementalMeritRank__graph, ego, focus, weight=weight_fun)
@@ -127,6 +129,13 @@ class GravityRank(LazyMeritRank):
 
         return edges, nodes_dict
 
+    async def zero_opinion_heartbeat(self, zero_node, top_nodes_limit, refresh_period):
+        self.logger.info(f"Starting zero opinion heartbeat")
+        while True:
+            self.logger.info(f"Refreshing zero opinion")
+            self.refresh_zero_opinion(zero_node=zero_node, top_nodes_limit=top_nodes_limit)
+            await asyncio.sleep(refresh_period)
+
     async def warmup(self, wait_time=0):
         # Maybe wait a bit for other services to start up
         await asyncio.sleep(wait_time)
@@ -135,6 +144,4 @@ class GravityRank(LazyMeritRank):
         for ego in all_egos:
             self.calculate(ego)
             # Just pass the control to the reactor for a brief moment
-            await asyncio.sleep(0)
-        self.logger.info(f"Starting warmup for global beacons score")
-        self.__get_top_beacons_global()
+            await asyncio.sleep(0.01)

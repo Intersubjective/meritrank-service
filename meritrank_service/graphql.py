@@ -165,29 +165,6 @@ class Query:
         stats_dict  = info.context.mr.get_users_stats(ego)
         return [MutualScore(ego=ego, node=k, node_score=v[0], ego_score=v[1]) for k,v in stats_dict.items()]
 
-
-    @strawberry.field
-    def global_scores(self, info, ego: str,
-                      where: Optional[NodeScoreWhereInput] = UNSET,
-                      limit: Optional[int] = UNSET,
-                      use_cache: Optional[bool] = UNSET,
-                      hide_personal: Optional[bool] = UNSET,
-                      ) -> list[NodeScore]:
-        LOGGER.info("Getting global scores (ego=%s, limit=%s, where=%s, hide_personal=%s, use_cache=%s )",
-                    ego, limit, where, hide_personal, use_cache)
-        result = []
-        for node, score in info.context.mr.get_top_beacons_global(limit=limit or None,
-                                                                  use_cache=use_cache or None).items():
-            if where is not UNSET and not where.match(node, score):
-                continue
-            if (hide_personal
-                    and (node.startswith("B") or node.startswith("C"))
-                    and info.context.mr.get_edge(node, ego)):
-                continue
-            result.append(NodeScore(node=node, ego=ego, score=score))
-        return result
-
-
 @strawberry.type
 class Mutation:
     @strawberry.mutation
