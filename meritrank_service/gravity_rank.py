@@ -100,10 +100,10 @@ class GravityRank(LazyMeritRank):
                 # For connections user-> comment | beacon -> user,
                 # convolve those into user->user
                 for _, c in graph.out_edges(b):
-                    if not (b.startswith("U") and b != src):
+                    if not (c.startswith("U") and c != a):
                         continue
-                    w_ab = G.get_edge_data(a, b)['weight']
-                    w_bc = G.get_edge_data(b, c)['weight']
+                    w_ab = self.get_edge(a, b)
+                    w_bc = self.get_edge(b, c)
                     # TODO: proper handling of negative edges
                     # Note that enemy of my enemy is not my friend.
                     # Though, this is pretty irrelevant for our current case
