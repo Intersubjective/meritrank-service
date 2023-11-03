@@ -139,6 +139,7 @@ class Query:
     def gravity_graph(self, info, ego: str,
                       focus: Optional[str] = UNSET,
                       positive_only: Optional[bool] = UNSET,
+                      limit: Optional[int] = UNSET
                       ) -> GravityGraph:
         """
         This handle returns a graph of user's connections to other users.
@@ -147,7 +148,9 @@ class Query:
         LOGGER.info("Getting gravity graph (%s, include_negative=%s)", ego, "True" if positive_only else "False")
         edges, nodes_dict = info.context.mr.gravity_graph(
             ego, focus or ego,
-            positive_only if positive_only is not UNSET else True)
+            positive_only if positive_only is not UNSET else True,
+            limit if limit is not UNSET else None
+        )
         users, beacons, comments = demux_nodes(nodes_dict)
         return GravityGraph(
             edges=edges,

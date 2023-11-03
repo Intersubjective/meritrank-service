@@ -63,29 +63,6 @@ class GravityRank(LazyMeritRank):
         path_edges = [(src, dest, self.get_edge(src, dest)) for src, dest in nx.utils.pairwise(ego_to_focus_path)]
         G.add_weighted_edges_from(path_edges)
 
-    def remove_non_positive(self, ego, G):
-        for node in list(G.nodes()):
-            if self.get_node_score(ego, node) <= 0:
-                G.remove_node(node)
-
-    def remove_terminal_comments(self, G):
-        for src, dest in list(G.edges()):
-            if src.startswith('U') and dest.startswith("C"):
-                in_degree = in_degree_single(G, dest)
-                if (in_degree == 0 or
-                        (in_degree == 1 and G.has_edge(dest, src))):
-                    if G.has_node(dest):
-                        G.remove_node(dest)
-
-    def remove_terminal_beacons(self, G):
-        for src, dest in list(G.edges()):
-            if src.startswith('U') and dest.startswith("B"):
-                in_degree = in_degree_single(G, dest)
-                if (in_degree == 0 or
-                        (in_degree == 1 and G.has_edge(dest, src))):
-                    if G.has_node(dest):
-                        G.remove_node(dest)
-
     def get_users_stats(self, ego) -> dict[str, (float, float)]:
         all_ranks = self.get_ranks(ego)
         users_stats = {}
@@ -96,32 +73,54 @@ class GravityRank(LazyMeritRank):
 
         return users_stats
 
-    def remove_duplicate_transitive_comments(self, G):
-        # TODO: properly handle the case for comments from different users
-        for node in list(G.nodes()):
-            if node.startswith("U"):
-                node_already_connected = False
-                for src, dest in list(G.in_edges(node)):
-                    if src.startswith("C"):
-                        if node_already_connected:
-                            G.remove_node(src)
-                        else:
-                            node_already_connected = True
+    def remove_outgoing_edges_upto_limit(self, G, ego, focus, limit):
+        neighbours = list(dest for src, dest in G.out_edges(focus))
+
+        for dest in sorted(neighbours, key=lambda x: self.get_node_score(ego, x))[limit:]:
+            G.remove_edge(focus, dest)
+            G.remove_node(dest)
+
+    def remove_self_edges(self, G):
+        for src, dest in list(G.edges()):
+            if src == dest:
+                G.remove_edge(src, dest)
 
     def gravity_graph(self, ego: str, focus: str,
-                      positive_only: bool = True) -> tuple[list[Edge], dict[str, float]]:
-        G = nx.ego_graph(self._IncrementalMeritRank__graph, focus, radius=2)
+                      positive_only: bool = True,
+                      limit: int | None = None
+                      ) -> tuple[list[Edge], dict[str, float]]:
+        G = nx.DiGraph()
+        graph = self._IncrementalMeritRank__graph
+        for a, b in graph.out_edges(focus):
+            if positive_only and self.get_node_score(ego, b) <= 0:
+                continue
+            if b.startswith("U"):
+                # For direct user->user add all of them
+                G.add_edge(a, b, weight=self.get_edge(a, b))
+            elif b.startswith("C") or b.startswith("U"):
+                # For connections user-> comment | beacon -> user,
+                # convolve those into user->user
+                for _, c in graph.out_edges(b):
+                    if not (b.startswith("U") and b != src):
+                        continue
+                    w_ab = G.get_edge_data(a, b)['weight']
+                    w_bc = G.get_edge_data(b, c)['weight']
+                    # TODO: proper handling of negative edges
+                    # Note that enemy of my enemy is not my friend.
+                    # Though, this is pretty irrelevant for our current case
+                    # where comments can't have outgoing negative edges.
+                    w_ac = w_ab * w_bc * (-1 if w_ab < 0 and w_bc < 0 else 1)
+                    G.add_edge(a, c, weight=w_ac)
 
-        if positive_only:
-            self.remove_non_positive(ego, G)
-        self.remove_terminal_comments(G)
-        self.remove_terminal_beacons(G)
-        self.remove_duplicate_transitive_comments(G)
+        self.remove_outgoing_edges_upto_limit(G, ego, focus, limit or 3)
+
         try:
             self.add_path_to_graph(G, ego, focus)
         except nx.exception.NetworkXNoPath:
             # No path found, so add just the focus node to show at least something
             G.add_node(focus)
+
+        self.remove_self_edges(G)
 
         nodes_dict = {n: self.get_node_score(ego, n) for n in G.nodes()}
         edges = [Edge(src=src, dest=dest, weight=self.get_edge(src, dest)) for src, dest in G.edges()]

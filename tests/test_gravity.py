@@ -1,5 +1,6 @@
 import pytest
 
+import networkx as nx
 from meritrank_service.gravity_rank import GravityRank
 
 
@@ -53,6 +54,15 @@ def test_gravity_graph(simple_gravity_graph):
     combined_result = {(e.src + e.dest): e.weight for e in result[0]}
     assert "U1" + "CU000" not in combined_result
     print (result)
+
+def test_remove_terminal_comments():
+    graph = {"U1": {"C1": {"weight": 1.0}},
+             "C1": {"U1": {"weight": 1.0}}}
+    g = GravityRank(graph=graph)
+    G = nx.DiGraph(graph)
+    g.remove_terminal_comments(G)
+    assert list(G.edges()) == []
+
 
 
 def test_global_ranks(simple_gravity_graph):
