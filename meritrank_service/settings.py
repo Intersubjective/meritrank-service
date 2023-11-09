@@ -17,6 +17,8 @@ class MeritRankSettings(BaseSettings):
     @validator('log_level')
     @classmethod
     def validate_log_level(cls, v):
+        if v is None:
+            return logging.INFO
         valid_log_levels = [logging.getLevelName(level) for level in
                             (logging.DEBUG,
                              logging.INFO,
