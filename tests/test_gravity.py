@@ -50,11 +50,14 @@ def simple_gravity_graph():
 def test_gravity_graph(simple_gravity_graph):
     # Just a smoke test
     g = GravityRank(graph=simple_gravity_graph)
-    result = g.gravity_graph("U1", "U1")
+    result = g.gravity_graph("U1", "U1", limit=10)
     combined_result = {(e.src + e.dest): e.weight for e in result[0]}
     assert "U1" + "CU000" not in combined_result
-    print (result)
-
+    assert len(result[0]) == 2
+    result = g.gravity_graph("U1", "U2", limit=10)
+    assert len(result[0]) == 3
+    result = g.gravity_graph("U1", "U3", limit=10)
+    assert 'C3' not in result[1]
 
 
 def test_global_ranks(simple_gravity_graph):
@@ -62,6 +65,7 @@ def test_global_ranks(simple_gravity_graph):
     g = GravityRank(graph=simple_gravity_graph)
     result = g.get_top_beacons_global()
     print(result)
+
 
 def test_users_stats(simple_gravity_graph):
     g = GravityRank(graph=simple_gravity_graph)

@@ -51,16 +51,33 @@ class GravityRank(LazyMeritRank):
     def refresh_zero_opinion(self, zero_node, top_nodes_limit=100):
         # Zero out existing edges of the zero node, to avoid affecting
         # the global ranking calculation
-        for _ , dst, _ in self.get_node_edges(zero_node):
+        for _, dst, _ in self.get_node_edges(zero_node):
             self.add_edge(zero_node, dst, 0.0)
         top_nodes = self.get_top_beacons_global()
         for dst, score in top_nodes[:top_nodes_limit]:
             self.add_edge(zero_node, dst, score)
 
     def add_path_to_graph(self, G, ego, focus):
+        if ego == focus:
+            return
         ego_to_focus_path = nx.dijkstra_path(self._IncrementalMeritRank__graph, ego, focus, weight=weight_fun)
-        path_edges = [(src, dest, self.get_edge(src, dest)) for src, dest in nx.utils.pairwise(ego_to_focus_path)]
-        G.add_weighted_edges_from(path_edges)
+
+        edges = []
+
+        for a, b, c in zip(ego_to_focus_path, ego_to_focus_path[1:], ego_to_focus_path[2:]):
+            # merge transitive edges going through comments and beacons
+            if b.startswith("C") or b.startswith("B"):
+                new_edge = (a, c, self.get_transitive_edge_weight(a, b, c))
+            else:
+                new_edge = (a, b, self.get_edge(a, b))
+
+            edges.append(new_edge)
+        if len(ego_to_focus_path) == 2:
+            # Add the final (and only)
+            final_nodes = ego_to_focus_path[-2:]
+            final_edge = (*final_nodes, self.get_edge(*final_nodes))
+            edges.append(final_edge)
+        G.add_weighted_edges_from(edges)
 
     def get_users_stats(self, ego) -> dict[str, (float, float)]:
         all_ranks = self.get_ranks(ego)
@@ -84,6 +101,15 @@ class GravityRank(LazyMeritRank):
             if src == dest:
                 G.remove_edge(src, dest)
 
+    def get_transitive_edge_weight(self, a, b, c):
+        w_ab = self.get_edge(a, b)
+        w_bc = self.get_edge(b, c)
+        # TODO: proper handling of negative edges
+        # Note that enemy of my enemy is not my friend.
+        # Though, this is pretty irrelevant for our current case
+        # where comments can't have outgoing negative edges.
+        return w_ab * w_bc * (-1 if w_ab < 0 and w_bc < 0 else 1)
+
     def gravity_graph(self, ego: str, focus: str,
                       positive_only: bool = True,
                       limit: int | None = None
@@ -100,15 +126,13 @@ class GravityRank(LazyMeritRank):
                 # For connections user-> comment | beacon -> user,
                 # convolve those into user->user
                 for _, c, _ in self.get_node_edges(b):
-                    if not (c.startswith("U") and c != a):
+                    if c == a:
+                        # Don't include back edges
                         continue
-                    w_ab = self.get_edge(a, b)
-                    w_bc = self.get_edge(b, c)
-                    # TODO: proper handling of negative edges
-                    # Note that enemy of my enemy is not my friend.
-                    # Though, this is pretty irrelevant for our current case
-                    # where comments can't have outgoing negative edges.
-                    w_ac = w_ab * w_bc * (-1 if w_ab < 0 and w_bc < 0 else 1)
+                    if not c.startswith("U"):
+                        # Only include edges to users
+                        continue
+                    w_ac = self.get_transitive_edge_weight(a, b, c)
                     G.add_edge(a, c, weight=w_ac)
 
         self.remove_outgoing_edges_upto_limit(G, ego, focus, limit or 3)
