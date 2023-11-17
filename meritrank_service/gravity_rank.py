@@ -23,7 +23,7 @@ def weight_fun(u, v, edge):
     w = edge['weight']
     if w > 0:
         return 1.0 / w
-    return 10 ^ 20
+    return None
 
 
 def filter_dict_by_set(d, s):
