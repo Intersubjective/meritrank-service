@@ -61,14 +61,17 @@ class GravityRank(LazyMeritRank):
         if ego == focus:
             return
         ego_to_focus_path = nx.dijkstra_path(self._IncrementalMeritRank__graph, ego, focus, weight=weight_fun)
+        ego_to_focus_path.append(None)
 
         edges = []
 
         for a, b, c in zip(ego_to_focus_path, ego_to_focus_path[1:], ego_to_focus_path[2:]):
             # merge transitive edges going through comments and beacons
-            if b.startswith("C") or b.startswith("B"):
+            if c is None:
+                new_edge = (a, b, self.get_edge(a, b))
+            elif b.startswith("C") or b.startswith("B"):
                 new_edge = (a, c, self.get_transitive_edge_weight(a, b, c))
-            else:
+            elif a.startswith("U"):
                 new_edge = (a, b, self.get_edge(a, b))
 
             edges.append(new_edge)
