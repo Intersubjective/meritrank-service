@@ -64,10 +64,9 @@ class GravityRank(LazyMeritRank):
         ego_to_focus_path.append(None)
 
         edges = []
-
         for a, b, c in zip(ego_to_focus_path, ego_to_focus_path[1:], ego_to_focus_path[2:]):
             # merge transitive edges going through comments and beacons
-            if c is None:
+            if c is None and not (a.startswith("C") or a.startswith("B")):
                 new_edge = (a, b, self.get_edge(a, b))
             elif b.startswith("C") or b.startswith("B"):
                 new_edge = (a, c, self.get_transitive_edge_weight(a, b, c))
@@ -119,9 +118,9 @@ class GravityRank(LazyMeritRank):
                       ) -> tuple[list[Edge], dict[str, float]]:
         G = nx.DiGraph()
         for a, b, _ in self.get_node_edges(focus):
-            if positive_only and self.get_node_score(ego, b) <= 0:
-                continue
             if b.startswith("U"):
+                if positive_only and self.get_node_score(ego, b) <= 0:
+                    continue
                 # For direct user->user add all of them
                 assert (self.get_edge(a, b) is not None)
                 G.add_edge(a, b, weight=self.get_edge(a, b))
@@ -129,6 +128,8 @@ class GravityRank(LazyMeritRank):
                 # For connections user-> comment | beacon -> user,
                 # convolve those into user->user
                 for _, c, _ in self.get_node_edges(b):
+                    if positive_only and self.get_node_score(ego, c) <= 0:
+                        continue
                     if c == a:
                         # Don't include back edges
                         continue
