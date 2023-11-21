@@ -43,7 +43,6 @@ def simple_gravity_graph():
         "C4": {
             "U3": {"weight": 1.0},
         },
-
     }
 
 
@@ -58,6 +57,19 @@ def test_gravity_graph(simple_gravity_graph):
     assert len(result[0]) == 3
     result = g.gravity_graph("U1", "U3", limit=10)
     assert 'C3' not in result[1]
+
+def test_omit_zero_edges(simple_gravity_graph):
+    zero = "U00000"
+    graph = dict(simple_gravity_graph)
+    graph.update({
+       zero: {"U1":{"weight": 1.0}},
+    })
+    graph["U1"][zero] =  {"weight": 1.0}
+    graph["U2"][zero] =  {"weight": 1.0}
+
+    g = GravityRank(graph=graph, zero_node=zero)
+    result = g.gravity_graph("U1", "U2", limit=1)
+    assert zero not in result[1]
 
 
 def test_global_ranks(simple_gravity_graph):

@@ -24,7 +24,10 @@ def create_meritrank_app():
         LOGGER.info("Loaded edges from DB")
 
     LOGGER.info("Creating meritrank instance")
-    rank_instance = GravityRank(graph=edges_data, logger=LOGGER.getChild("meritrank"))
+    rank_instance = GravityRank(
+        graph=edges_data,
+        logger=LOGGER.getChild("meritrank"),
+        zero_node=settings.zero_node)
     user_routes = MeritRankRestRoutes(rank_instance)
 
     LOGGER.info("Creating FastAPI instance")
@@ -52,7 +55,6 @@ def create_meritrank_app():
                     await rank_instance.warmup(settings.ego_warmup_wait)
                 if settings.zero_node:
                     await rank_instance.zero_opinion_heartbeat(
-                        settings.zero_node,
                         settings.zero_top_nodes_limit,
                         settings.zero_heartbeat_period)
 

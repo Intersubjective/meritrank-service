@@ -32,6 +32,10 @@ def filter_dict_by_set(d, s):
 
 class GravityRank(LazyMeritRank):
 
+    def __init__(self, *args, zero_node=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.zero_node = zero_node
+
     def get_top_beacons_global(self):
         reduced_graph = nx.DiGraph()
         for ego in self._IncrementalMeritRank__graph.nodes():
@@ -48,14 +52,14 @@ class GravityRank(LazyMeritRank):
                               reverse=True)
         return sorted_ranks
 
-    def refresh_zero_opinion(self, zero_node, top_nodes_limit=100):
+    def refresh_zero_opinion(self, top_nodes_limit=100):
         # Zero out existing edges of the zero node, to avoid affecting
         # the global ranking calculation
-        for _, dst, _ in self.get_node_edges(zero_node):
-            self.add_edge(zero_node, dst, 0.0)
+        for _, dst, _ in self.get_node_edges(self.zero_node):
+            self.add_edge(self.zero_node, dst, 0.0)
         top_nodes = self.get_top_beacons_global()
         for dst, score in top_nodes[:top_nodes_limit]:
-            self.add_edge(zero_node, dst, score)
+            self.add_edge(self.zero_node, dst, score)
 
     def add_path_to_graph(self, G, ego, focus):
         if ego == focus:
@@ -139,26 +143,38 @@ class GravityRank(LazyMeritRank):
                     w_ac = self.get_transitive_edge_weight(a, b, c)
                     G.add_edge(a, c, weight=w_ac)
 
+        # Remove edges leading into the zero node - except for the one goin from the ego
+        # The reason is, these edges are redundant and add not new information
+        if self.zero_node and G.has_node(self.zero_node):
+            for src, dest in list(G.in_edges(self.zero_node)):
+                if src != ego:
+                    G.remove_edge(src, dest)
+
         self.remove_outgoing_edges_upto_limit(G, ego, focus, limit or 3)
 
         try:
             self.add_path_to_graph(G, ego, focus)
         except nx.exception.NetworkXNoPath:
-            # No path found, so add just the focus node to show at least something
-            G.add_node(focus)
+            # No path found, so add just the focus node (later) to show at least something
+            pass
 
         self.remove_self_edges(G)
+        G.remove_nodes_from(list(n for n in nx.isolates(G)))
+
+        # Add at least something
+        G.add_node(focus)
+        G.add_node(ego)
 
         nodes_dict = {n: self.get_node_score(ego, n) for n in G.nodes()}
         edges = [Edge(src=src, dest=dest, weight=G.get_edge_data(src, dest)['weight']) for src, dest in G.edges()]
 
         return edges, nodes_dict
 
-    async def zero_opinion_heartbeat(self, zero_node, top_nodes_limit, refresh_period):
+    async def zero_opinion_heartbeat(self, top_nodes_limit, refresh_period):
         self.logger.info(f"Starting zero opinion heartbeat")
         while True:
             self.logger.info(f"Refreshing zero opinion")
-            self.refresh_zero_opinion(zero_node=zero_node, top_nodes_limit=top_nodes_limit)
+            self.refresh_zero_opinion(top_nodes_limit=top_nodes_limit)
             await asyncio.sleep(refresh_period)
 
     async def warmup(self, wait_time=0):
