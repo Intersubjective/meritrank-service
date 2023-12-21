@@ -46,7 +46,7 @@ global ranking and reestablishment of the Zero node. By default, the recalculati
 is 1 hour.
 
 The environment variables controlling the period of the recalculation and the limit of top nodes
-to add are `ZERO_HEART_PERIOD` (in seconds) and `ZERO_TOP_NODES_LIMIT` respectively (100 by default).
+to add are `ZERO_HEARTBEAT_PERIOD` (in seconds) and `ZERO_TOP_NODES_LIMIT` respectively (100 by default).
 
 Zero recalulation is scheduled to perform synchronously after the warmup (if enabled).
 If the warmup is disabled, Zero will be recalculated immediately after the service start.
