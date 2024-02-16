@@ -24,7 +24,7 @@ def create_meritrank_app():
         LOGGER.info("Loaded edges from DB")
 
     LOGGER.info("Creating meritrank instance")
-    rank_instance = GravityRank(graph=edges_data, logger=LOGGER.getChild("meritrank"))
+    rank_instance = GravityRank(graph=edges_data, logger=LOGGER.getChild("meritrank"), num_walks=settings.walk_count)
     user_routes = MeritRankRestRoutes(rank_instance)
 
     LOGGER.info("Creating FastAPI instance")

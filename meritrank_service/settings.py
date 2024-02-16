@@ -13,6 +13,7 @@ class MeritRankSettings(BaseSettings):
     zero_node: Optional[str] = None
     zero_top_nodes_limit: int = 1000
     zero_heartbeat_period: int = 60*60  # Seconds to wait before refreshing zero's opinion on network
+    walk_count = 10000 # number of random walks to perform for each ego
 
     @validator('log_level')
     @classmethod

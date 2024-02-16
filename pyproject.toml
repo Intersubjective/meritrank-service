@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "meritrank-service"
-version = "1.4.4"
+version = "1.4.5"
 description = "Web service for calculating MeritRank scores"
 authors = ["V.G. Bulavintsev <golem.md@gmail.com>"]
 readme = "README.md"
@@ -12,7 +12,7 @@ license = "GPLv2"
 [tool.poetry.dependencies]
 python = ">=3.11, <3.13"
 classy-fastapi = "^0.5.1"
-meritrank-python = "0.2.9"
+meritrank-python = "0.2.10"
 psycopg2-binary = "^2.9.7"
 strawberry-graphql = {extras = ["fastapi"], version = "^0.209.2"}
 asyncpg-listen = "^0.0.6"

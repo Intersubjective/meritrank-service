@@ -43,6 +43,14 @@ class MeritRankRestRoutes(Routable):
         self.__rank.calculate(ego, num_walks=count)
         return {"message": f"Calculated {count} walks for {ego}"}
 
+    @get("/calculate")
+    async def get_calculate_count(self, ego: NodeId):
+        """
+        Get the number of walks that have been generated for the given ego.
+        :param ego: the node to get the number of walks for
+        """
+        return {"count": self.__rank.walk_count_for_ego(ego)}
+
     @put("/zero")
     async def put_zero(self, zero_node: NodeId, top_nodes_limit: int = 100):
         """
